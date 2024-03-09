@@ -1,0 +1,7 @@
+The folder rawdata has all the data to be used in this project. 
+
+The first step is to download the science and raw data from the ESO archive using the downloadScript_all.sh script. There are files that cannot be downloaded using this script, however, but they are all calibration files (like standards that where removed for data quality or other reasons). This is confirmed by comparing the list of downloaded files with the lists in the downloadScript_science.sh, downloadScript_logs.sh and downloadScript_cals.sh scripts. 
+
+The next step is to check by eye all the data and remove all bad data. There is a very big issue with saturated standard stars. We need to check that for every target observation there is at least one pol and one zero-pol non-saturated standard. The notes from Paola Popesso on which standards to use in I and v are in the I_BESS_analysis.ascii and v_HIGH_analysis.ascii files.
+
+
