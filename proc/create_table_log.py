@@ -4,7 +4,6 @@ import numpy as np
 from astropy.table import Table
 from astropy.io import fits
 import subprocess
-import re
 
 #Get the header items we will pull from each fits file.
 hkws = {
@@ -31,6 +30,7 @@ mjd_folders["W0116-0505"] = [
     60143,
     60146,
     60148,
+    60201,
 ]
 mjd_folders["STD"] = [
     59117,
@@ -40,6 +40,7 @@ mjd_folders["STD"] = [
     60158,
     60201,
     60223,
+    60293,
 ]
 mjd_folders["W0019-1046"] = [
     60201,
@@ -62,16 +63,11 @@ for fold1 in mjd_folders.keys():
     for fold2 in mjd_folders[fold1]:
 
         #List all of the fits files in the folder.
-        aux = open("aux.dat","w")
-        subprocess.call("ls {}/{}/POLARIMETRY/CHIP1/*/*.fits".format(fold1, fold2), shell=True, stdout=aux)
-        aux.close()
+        ls_output = subprocess.run("ls {}/{}/POLARIMETRY/CHIP1/*/*.fits".format(fold1, fold2), shell=True, capture_output=True)
+        fnames = ls_output.stdout.decode('utf8').split()
 
         #Go through every file and get the requested keywords from the headers.
-        aux = open("aux.dat")
-        for line in aux:
-
-            #Read the fits filename. 
-            fname = line.split()[0]
+        for fname in fnames:
 
             #Open the fits file and get the keywords from the header. 
             hdu = fits.open(fname)
@@ -94,9 +90,6 @@ for fold1 in mjd_folders.keys():
 
             #Add the file information to the log table.
             log.add_row(new_row)
-
-        #Remove the aux file.    
-        subprocess.call(["rm","aux.dat"])
 
 #Save the log. 
 log.write("log.fits", format='fits', overwrite=True)
