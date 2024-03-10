@@ -8,7 +8,7 @@ import re
 from proc_routines import *
 
 #Define important folders
-root = "/home/rjassef/Impol_Blue_HotDOGs/reduction/proc/"
+root = "/Users/rjassef/Impol_Blue_HotDOGs/Impol_BHDs_repo/proc/"
 
 conf_folder = root+"conf_files"
 bias_folder = root+"BIAS"
