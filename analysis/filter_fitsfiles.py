@@ -29,7 +29,7 @@ def filter_fitsfiles(obj_id, rim_folder, filter, mjd=None, ichip="1", ob=None):
 
 def default_folders(use_skyflats=False):
 
-    root = "/home/rjassef/Impol_Blue_HotDOGs/reduction/"
+    root = "/home/rjassef/Impol_Blue_HotDOGs/Impol_BHDs_repo/"
 
     mask_folder = root+"analysis/masks"
     crz_folder = root+"analysis/crz"
