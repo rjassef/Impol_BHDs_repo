@@ -26,6 +26,11 @@ for fname in fnames:
     #Get the object name.
     obj = h[0].header['OBJECT']
 
+    #All observations where done in 2x2 binning, but some biases where obtained in 1x1. Do not distribute those. 
+    if obj=="BIAS":
+        if h[0].header['HIERARCH ESO DET WIN1 BINX']!=2 or h[0].header['HIERARCH ESO DET WIN1 BINY']!=2:
+            continue
+
     #Chip
     chip = h[0].header['EXTNAME']
 
