@@ -1,6 +1,7 @@
 #Ignore all images. 
 *.fits
 rawdata/
+log.txt
 
 #Ignore mac specific files. 
 .DS_Store
