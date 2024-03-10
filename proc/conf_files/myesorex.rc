@@ -1,0 +1,7 @@
+# Example EsoRex configuration file
+#
+esorex.caller.recipe-dir=/home/rjassef/cpl/lib/esopipes-plugins
+esorex.caller.log-dir=.
+esorex.caller.log-file=esorex.log
+esorex.caller.output-dir=.
+esorex.caller.output-prefix=out_
