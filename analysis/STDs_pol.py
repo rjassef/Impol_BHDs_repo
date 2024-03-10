@@ -36,15 +36,18 @@ if args.use_skyflats:
 fname += ".dat"
 
 #Read the objects already processed. 
-cat = open(fname)
-for line in cat:
-    obj_id = line[:28].strip()
-    x = line[28:].split()
-    pol_frac[obj_id] = [[float(x[0])]]
-    pol_angle[obj_id] = [[float(x[2])]]
-    epol_frac[obj_id] = [[float(x[1])]]
-    epol_angle[obj_id] = [[float(x[3])]]
-cat.close()
+try:
+    cat = open(fname)
+    for line in cat:
+        obj_id = line[:28].strip()
+        x = line[28:].split()
+        pol_frac[obj_id] = [[float(x[0])]]
+        pol_angle[obj_id] = [[float(x[2])]]
+        epol_frac[obj_id] = [[float(x[1])]]
+        epol_angle[obj_id] = [[float(x[3])]]
+    cat.close()
+except FileNotFoundError:
+    print("No previous processing found.")
 
 #Read from the log the standards to process. 
 cat = open("../proc/small_log.txt")
