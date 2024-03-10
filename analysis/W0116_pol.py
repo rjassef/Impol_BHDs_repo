@@ -33,8 +33,8 @@ for filter in filters:
         mjds = ["59135", "59136", "59136", "59137", None]
 
     if filter=="I_BESS":
-        ob_ids = [3564862, 3564862, 3565005, None, None]
-        mjds = ["60146", "60148", "60148", "60148", None]
+        ob_ids = [3564862, 3564862, 3565005, None, 3564862, None]
+        mjds = ["60146", "60148", "60148", "60148", "60201",None]
 
     if filter=="v_HIGH":
         ob_ids = [3564847, None]
