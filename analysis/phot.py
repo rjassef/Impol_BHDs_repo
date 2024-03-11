@@ -4,8 +4,9 @@ import re
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats, SigmaClip
 
-from photutils import DAOStarFinder, centroid_sources, centroid_com
-from photutils import CircularAperture, CircularAnnulus, aperture_photometry
+from photutils.detection import DAOStarFinder
+from photutils.centroids import centroid_sources, centroid_com
+from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry
 from photutils import Background2D, SExtractorBackground
 
 ####
