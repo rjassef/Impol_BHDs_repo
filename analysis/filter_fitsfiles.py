@@ -4,26 +4,30 @@ import subprocess
 from astropy.io import fits
 import os
 
-def filter_fitsfiles(obj_id, rim_folder, filter, mjd=None, ichip="1", ob=None):
+def filter_fitsfiles(obj_id, rim_folder, filter, mjd_all=None, ichip="1", ob_all=None):
 
-    cat = open("aux.dat","w")
-    subprocess.call("ls {0:s}/*.chip{1:s}.*.fits".format(rim_folder, ichip), shell=True, stdout=cat)
-    cat.close()
+    ls_output = subprocess.run("ls {0:s}/*.chip{1:s}.*.fits".format(rim_folder, ichip), shell=True, capture_output=True)
+    fnames = ls_output.stdout.decode('utf8').split()
 
-    fnames = np.genfromtxt("aux.dat", dtype="U")
-    subprocess.call(["rm", "aux.dat"])
+    if not isinstance(mjd_all,list):
+        mjd_all = [mjd_all]
+    if not isinstance(ob_all, list):
+        ob_all = [ob_all]
 
     output_fnames = []
-    for fname in fnames:
-        h = fits.open(fname)
-        if h[0].header['HIERARCH ESO OBS TARG NAME']==obj_id:
-            if ob is not None and h[0].header['HIERARCH ESO OBS ID']!=ob:
-                continue
-            if mjd is not None and not re.search(mjd,fname):
-                continue
-            if h[0].header['HIERARCH ESO INS FILT1 NAME']!=filter:
-                continue
-            output_fnames.append(re.sub(r'^.*/(.*?)$', r'\1', fname))
+    for i, mjd in enumerate(mjd_all):
+        ob = ob_all[i]
+
+        for fname in fnames:
+            h = fits.open(fname)
+            if h[0].header['HIERARCH ESO OBS TARG NAME']==obj_id:
+                if ob is not None and h[0].header['HIERARCH ESO OBS ID']!=ob:
+                    continue
+                if mjd is not None and not re.search(mjd,fname):
+                    continue
+                if h[0].header['HIERARCH ESO INS FILT1 NAME']!=filter:
+                    continue
+                output_fnames.append(re.sub(r'^.*/(.*?)$', r'\1', fname))
 
     return(output_fnames)
 

@@ -28,7 +28,7 @@ def get_pol(obj_id, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder,
         oerr = dict()
 
         #Select the appropriate files.
-        fnames = filter_fitsfiles.filter_fitsfiles(obj_id, rim_folder, filter, ob=ob_id, ichip=chip, mjd=mjds[kid])
+        fnames = filter_fitsfiles.filter_fitsfiles(obj_id, rim_folder, filter, ob_all=ob_id, ichip=chip, mjd_all=mjds[kid])
 
         for i, fname in enumerate(fnames):
             #Get the masks if needed.
