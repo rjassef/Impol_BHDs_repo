@@ -2,6 +2,7 @@ import numpy as np
 import re
 import subprocess
 from astropy.io import fits
+import os
 
 def filter_fitsfiles(obj_id, rim_folder, filter, mjd=None, ichip="1", ob=None):
 
@@ -29,7 +30,7 @@ def filter_fitsfiles(obj_id, rim_folder, filter, mjd=None, ichip="1", ob=None):
 
 def default_folders(use_skyflats=False):
 
-    root = "/home/rjassef/Impol_Blue_HotDOGs/Impol_BHDs_repo/"
+    root = "{}/Impol_Blue_HotDOGs/Impol_BHDs_repo/".format(os.path.expanduser("~"))
 
     mask_folder = root+"analysis/masks"
     crz_folder = root+"analysis/crz"
