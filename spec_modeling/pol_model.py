@@ -30,7 +30,7 @@ def load_bands():
     return bands
 
 
-def get_a_b(theta, bands, spec, model):
+def get_a_b(theta_A, theta_B, bands, spec, model):
 
     #Load the spectrum into a synphot model.
     full_spec = SourceSpectrum(Empirical1D, points=spec.lam_obs, lookup_table=spec.flam, keep_neg=True)
@@ -39,14 +39,14 @@ def get_a_b(theta, bands, spec, model):
     I_spec = SourceSpectrum(Empirical1D, points=spec.lam_obs, lookup_table=model.flam_model(spec.lam_rest), keep_neg=True)
 
     #The A spec corresponds to the continuum contribution to the stokes parameters. 
-    A_spec = SourceSpectrum(Empirical1D, points=spec.lam_obs, lookup_table=model.flam_cont_model(spec.lam_rest) * theta(spec.lam_rest), keep_neg=True)
+    A_spec = SourceSpectrum(Empirical1D, points=spec.lam_obs, lookup_table=model.flam_cont_model(spec.lam_rest) * theta_A, keep_neg=True)
 
     #The B spec corresponds to the contribution of the lines with polarization to the Stokes parameters.
     flam_pol_lines_model = np.zeros(len(spec.lam_rest)) * model.flam_model(spec.lam_rest).unit
     for i in range(len(model.multi_line)):
         if model.multi_line[i].pol:
             flam_pol_lines_model += model.multi_line[i].flam_line_model(spec.lam_rest)
-    B_spec = SourceSpectrum(Empirical1D, points=spec.lam_obs, lookup_table=flam_pol_lines_model * theta(spec.lam_rest), keep_neg=True)
+    B_spec = SourceSpectrum(Empirical1D, points=spec.lam_obs, lookup_table=flam_pol_lines_model * theta_B, keep_neg=True)
 
     #Now, precompute the BB parameters. 
     a = np.zeros(len(bands))
