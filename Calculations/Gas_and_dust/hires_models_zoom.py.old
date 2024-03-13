@@ -1,0 +1,76 @@
+import numpy as np
+import astropy.units as u
+import multiprocessing as mp
+from functools import partial
+import matplotlib.pyplot as plt 
+
+from torus_model import torus_model
+from free_electrons import free_electrons
+from draine_dust import draine_dust
+
+"""
+    This script does the same as hires_models.py, but zooms into the region where the scattering angle is close to the minimum possible. This also means that psi is required to be small. 
+"""
+
+
+###
+
+def get_S(psi_angles, pobj, theta_scattering_angles):
+    #This is the array that will hold the S values. 
+    S = np.zeros((len(theta_scattering_angles), len(psi_angles), 3))*pobj.dsigma_norm.unit
+    for k, theta in enumerate(theta_scattering_angles):
+        tmod = torus_model(theta, pobj)
+        tmod.get_integrals(psi_angles)
+        S[k,:,0] = tmod.S1
+        S[k,:,1] = tmod.S2
+        S[k,:,2] = tmod.S3
+    return S
+
+
+###
+
+#Set the particle objects for all models we'll run.
+model_names = ["gas", "SMC_dust", "LMC_dust", "MW_dust"]
+pobjs = list()
+for model_name in model_names:
+    if model_name == "gas":
+        #For gas we'll assume only free electrons doing the scattering.
+        pobjs.append(free_electrons())
+    elif model_name == "SMC_dust":
+        pobjs.append(draine_dust("SMC"))
+    elif model_name == "LMC_dust":
+        pobjs.append(draine_dust("LMC"))
+    elif model_name == "MW_dust":
+        pobjs.append(draine_dust("MW"))
+
+#This is the range of opening angles for which we'll calculate the integrals. 
+psi_angles = np.arange(0.1,40.01,0.1)*u.deg
+
+#Run through evey particle object.
+for i, pobj in enumerate(pobjs):
+
+    #This is the range of inclination angles we'll consider.
+    tmod_aux = torus_model(None, pobj)
+    theta_s_min = tmod_aux.find_th_min(0.11)[0].to(u.deg).value
+    dtheta_s = 0.1
+    theta_scattering_angles = np.arange(theta_s_min+dtheta_s, theta_s_min+2.0, dtheta_s)*u.deg
+
+    #Start the multiprocessing.
+    Ncpu = mp.cpu_count()
+    Pool = mp.Pool(Ncpu)
+    func = partial(get_S, psi_angles, pobj)
+
+    #Produce the data chunks.
+    th_s_split = np.array_split(theta_scattering_angles, Ncpu)
+    S = Pool.map(func, th_s_split)
+    S = np.vstack(S)
+    Pool.close()
+
+    #Save S.
+    S = S.to(u.cm**2).value
+    cat = open("{}_S.hires.zoom.txt".format(model_names[i]),"w")
+    for l,theta in enumerate(theta_scattering_angles):
+        for k,psi in enumerate(psi_angles):
+            cat.write("{0:10.1f} {1:10.2f} {2:15.6e} {3:15.6e} {4:15.6e}\n".format(
+                theta.to(u.deg).value, psi.to(u.deg).value, S[l,k,0], S[l,k,1], S[l,k,2]))
+    cat.close()
