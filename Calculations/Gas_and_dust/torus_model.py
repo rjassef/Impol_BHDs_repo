@@ -40,7 +40,7 @@ class torus_model(object):
     
     def S3_func(self, phi_p, cos_th_p):
         cos_th, _, sin_2phi = self.prime_to_og(cos_th_p, phi_p)
-        return -self.pobj.pfrac(cos_th) * self.pobj.diff_cross_section(cos_th) * sin_2phi
+        return -np.abs(self.pobj.pfrac(cos_th)) * self.pobj.diff_cross_section(cos_th) * sin_2phi
 
     def get_integrals(self, psi_angles):
         S1 = np.zeros(len(psi_angles))
@@ -67,8 +67,8 @@ class torus_model(object):
 
     #Polarization for psi=0.
     def p_psi0(self, costh):
-        dp1 = self.pobj.pfrac(costh)
-        dp2 = self.pobj.pfrac(-costh)
+        dp1 = np.abs(self.pobj.pfrac(costh))
+        dp2 = np.abs(self.pobj.pfrac(-costh))
         ds1 = self.pobj.diff_cross_section(costh)
         ds2 = self.pobj.diff_cross_section(-costh)
         return (dp1*ds1+dp2*ds2)/(ds1+ds2)
