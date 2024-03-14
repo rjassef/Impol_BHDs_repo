@@ -36,7 +36,7 @@ class torus_model(object):
 
     def S2_func(self, phi_p, cos_th_p):
         cos_th, cos_2phi, _ = self.prime_to_og(cos_th_p, phi_p)
-        return -self.pobj.pfrac(cos_th) * self.pobj.diff_cross_section(cos_th) * cos_2phi
+        return -np.abs(self.pobj.pfrac(cos_th)) * self.pobj.diff_cross_section(cos_th) * cos_2phi
     
     def S3_func(self, phi_p, cos_th_p):
         cos_th, _, sin_2phi = self.prime_to_og(cos_th_p, phi_p)
