@@ -42,23 +42,25 @@ class torus_model(object):
         cos_th, _, sin_2phi = self.prime_to_og(cos_th_p, phi_p)
         return -self.pobj.pfrac(cos_th) * self.pobj.diff_cross_section(cos_th) * sin_2phi
 
-    def get_integrals(self, psi_angles):
+    def get_integrals(self, psi_angles, forward_scattering=True, backward_scattering=True):
         S1 = np.zeros(len(psi_angles))
         S2 = np.zeros(len(psi_angles))
         S3 = np.zeros(len(psi_angles))
         for k, psi in enumerate(psi_angles):
             phi_p_min = 0
             phi_p_max = 2*np.pi
-            cos_th_p_min = np.cos(psi)
-            cos_th_p_max = 1.0
-            S1[k] =  dblquad(self.S1_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
-            S2[k] =  dblquad(self.S2_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
-            S3[k] =  dblquad(self.S3_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
-            cos_th_p_min = -1.0
-            cos_th_p_max = -np.cos(psi)
-            S1[k] += dblquad(self.S1_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
-            S2[k] += dblquad(self.S2_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
-            S3[k] += dblquad(self.S3_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
+            if forward_scattering:
+                cos_th_p_min = np.cos(psi)
+                cos_th_p_max = 1.0
+                S1[k] =  dblquad(self.S1_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
+                S2[k] =  dblquad(self.S2_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
+                S3[k] =  dblquad(self.S3_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
+            if backward_scattering:
+                cos_th_p_min = -1.0
+                cos_th_p_max = -np.cos(psi)
+                S1[k] += dblquad(self.S1_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
+                S2[k] += dblquad(self.S2_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
+                S3[k] += dblquad(self.S3_func, cos_th_p_min, cos_th_p_max, phi_p_min, phi_p_max)[0]
 
         self.S1 = S1 * self.pobj.dsigma_norm
         self.S2 = S2 * self.pobj.dsigma_norm
