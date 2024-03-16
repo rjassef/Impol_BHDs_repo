@@ -2,6 +2,9 @@ import numpy as np
 import astropy.units as u
 from synphot import SpectralElement, SourceSpectrum, Observation
 from synphot.models import Empirical1D
+from draine_dust_2D import draine_dust
+from scipy.optimize import minimize, LinearConstraint
+import matplotlib.pyplot as plt
 
 def load_bands():
     #Load the filters.
@@ -65,4 +68,74 @@ def get_a_b(theta_A, theta_B, bands, spec, model):
 #Function to return the broad-band p calculated from the model.
 def model_p(x, a, b):
     return ((x[0]*a)**2 + (x[1]*b)**2 + 2*x[0]*x[1]*a*b*np.cos(2*x[2]*u.deg))**0.5
+
+
+def chi2(x, get_pmod, p_measured, p_unc, dust, spec, model):
+    p_mod = get_pmod(x, dust, spec, model)
+    return np.sum(((p_measured-p_mod)/p_unc)**2)
+
+#Function to find the best-fit to the polarization.
+def fit_pol(get_pmod, p_measured, p_unc, dust_types, bands, spec, model, x0 = np.array([0.5, 0.5, 70., 0.]), force_forward=False, force_backward = False):
+    
+    xopt_all = dict()
+    mod_p = np.zeros((len(dust_types),len(bands)))
+    for k, dust_type in enumerate(dust_types):
+
+        dust = draine_dust(type=dust_type)
+
+        G = np.identity(x0.shape[0])
+        min_vals = [0., 0., 0., 0.]
+        max_vals = [1., 1., 90., 180.]
+
+        #The code has difficulties converging above and below 90 deg. So let's try both and save the best.
+        for i in range(2):
+            if i==0:
+                if force_backward:
+                    continue
+                if force_forward:
+                    min_vals[-1] = 0.
+                    max_vals[-1] = 90.
+                x0[-1] = 60.
+            if i==1:
+                if force_forward:
+                    continue
+                if force_backward:
+                    min_vals[-1] = 90.
+                    max_vals[-1] = 180.
+                x0[-1] = 170.
+            lincon = LinearConstraint(G, min_vals, max_vals)
+            xopt_aux = minimize(chi2, x0=x0, constraints=lincon, args=(get_pmod, p_measured, p_unc, dust, spec, model))
+            if "xopt" not in locals() or xopt_aux.fun < xopt.fun:
+                xopt = xopt_aux
+
+        print(xopt)
+
+        # phi = xopt.x[3]
+        # theta = dust.pfrac(spec.lam_rest.to(u.um).value, phi).flatten()
+        # a, b = get_a_b(theta, theta, bands, spec, model)
+
+        # for j in range(len(bands)):
+        #     mod_p[k,j] = model_p(xopt.x[:3], a[j], b[j])
+            #print(mod_p[k,j])
+        mod_p[k] = get_pmod(xopt.x, dust, spec)
+
+
+        xopt_all[dust_type] = xopt
+        del xopt
+
+    return xopt_all, mod_p
+
+def pol_plot(mod_p, p_measured, p_unc, spec, dust_types):
+
+    wave = np.array([5500., 6500., 8000.]) / spec.zspec
+
+    fig, ax = plt.subplots(1)
+
+    ax.errorbar(wave, p_measured, yerr=p_unc, fmt='ko', label='Measurements')
+    for k, dust_type in enumerate(dust_types):
+        ax.plot(wave, mod_p[k], 's', label=dust_type)
+    ax.legend()
+    ax.set_xlabel('Wavelength (Angstroms)')
+    ax.set_ylabel('Polarization fraction')
+    plt.show()
 
