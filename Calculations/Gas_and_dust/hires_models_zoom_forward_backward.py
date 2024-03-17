@@ -51,6 +51,12 @@ bhds[wid]['z'] = 2.100
 bhds[wid]['bands'] = ["R"]
 bhds[wid]['pfrac'] = [0.253]
 
+wid = 'W0831+0140'
+bhds[wid] = dict()
+bhds[wid]['z'] = 3.913
+bhds[wid]['bands'] = ["R"]
+bhds[wid]['pfrac'] = [0.069]
+
 band_centers = dict()
 band_centers['v'] = 5500.*u.AA
 band_centers['R'] = 6500.*u.AA

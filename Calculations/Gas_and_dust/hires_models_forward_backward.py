@@ -25,8 +25,8 @@ def get_S(psi_angles, pobj, forward, backward, theta_scattering_angles):
 
 ###
 
-wids = ['W0116-0505', 'W0019-1046', 'W0220+0137', 'W0204-0506']
-zs = [3.173, 1.641, 3.122, 2.100]
+wids = ['W0116-0505', 'W0019-1046', 'W0220+0137', 'W0204-0506', 'W0831+0140']
+zs = [3.173, 1.641, 3.122, 2.100, 3.913]
 bands = ["v","R","I"]
 band_centers = np.array([5500., 6500., 8000.])*u.AA
 
