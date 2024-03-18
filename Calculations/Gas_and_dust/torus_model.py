@@ -68,12 +68,20 @@ class torus_model(object):
         return
 
     #Polarization for psi=0.
-    def p_psi0(self, costh):
+    def p_psi0(self, costh, forward_scattering=True, backward_scattering=True):
         dp1 = self.pobj.pfrac(costh)
         dp2 = self.pobj.pfrac(-costh)
         ds1 = self.pobj.diff_cross_section(costh)
         ds2 = self.pobj.diff_cross_section(-costh)
-        return (dp1*ds1+dp2*ds2)/(ds1+ds2)
+        num = 0.
+        dem = 0.
+        if forward_scattering:
+            num += dp1*ds1
+            dem += ds1
+        if backward_scattering:
+            num += dp2*ds2
+            dem += ds2
+        return num/dem
 
     #Find the minimum theta that's able to produce the polarization.
     def find_th_min(self, p_targ):
