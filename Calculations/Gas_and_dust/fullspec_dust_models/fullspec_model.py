@@ -86,38 +86,22 @@ for dust_type in dust_types:
 
             print(lam_targ, dust_type)
 
-            #Do forwards and backwards scattering separately. 
-            #for j in range(3):
-            for j in [2]:
-                if j==0:
-                    forward=True
-                    backward=False
-                    suffix = "FW"
-                elif j==1:
-                    forward=False
-                    backward=True
-                    suffix  = "BW"
-                elif j==2:
-                    forward=True
-                    backward=True
-                    suffix = "FWBW"
+            #Start the multiprocessing.
+            if __name__ == '__main__':
+                mp.freeze_support()
+                Ncpu = mp.cpu_count()
+                Pool = mp.get_context("fork").Pool(Ncpu)
+                func = partial(get_S, psi_angles, pobj, forward, backward)
 
-                #Start the multiprocessing.
-                if __name__ == '__main__':
-                    mp.freeze_support()
-                    Ncpu = mp.cpu_count()
-                    Pool = mp.get_context("fork").Pool(Ncpu)
-                    func = partial(get_S, psi_angles, pobj, forward, backward)
+                #Produce the data chunks.
+                th_s_split = np.array_split(theta_scattering_angles, Ncpu)
+                S = Pool.map(func, th_s_split)
+                S = np.vstack(S)
+                Pool.close()
 
-                    #Produce the data chunks.
-                    th_s_split = np.array_split(theta_scattering_angles, Ncpu)
-                    S = Pool.map(func, th_s_split)
-                    S = np.vstack(S)
-                    Pool.close()
+                #Save S.
+                S = S.to(u.cm**2).value
+                p_array = -S[:,:,1]/S[:,:,0]
 
-                    #Save S.
-                    S = S.to(u.cm**2).value
-                    p_array = -S[:,:,1]/S[:,:,0]
-
-                    np.savetxt(cato, p_array)
+                np.savetxt(cato, p_array)
         cato.close()
