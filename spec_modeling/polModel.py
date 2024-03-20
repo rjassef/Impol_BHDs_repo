@@ -40,9 +40,9 @@ class PolModel(object):
         I_bess[:,0] *= 10
         v_high[:,0] *= 10
 
-        v_high = v_high[(v_high[:,0]>4000.) & (v_high[:,0]<8000.)]
-        I_bess = I_bess[(I_bess[:,0]>4000.) & (I_bess[:,0]<8000.)]
-        R_spec = R_spec[(R_spec[:,0]>4000.) & (R_spec[:,0]<8000.)]
+        v_high = v_high[(v_high[:,0]>4000.) & (v_high[:,0]<10000.)]
+        I_bess = I_bess[(I_bess[:,0]>4000.) & (I_bess[:,0]<10000.)]
+        R_spec = R_spec[(R_spec[:,0]>4000.) & (R_spec[:,0]<10000.)]
 
         Rbp= SpectralElement(Empirical1D, points=R_spec[:,0], lookup_table=R_spec[:,1]/100., keep_neg=False)
         Ibp= SpectralElement(Empirical1D, points=I_bess[:,0], lookup_table=I_bess[:,1]/100., keep_neg=False)
