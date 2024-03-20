@@ -9,12 +9,13 @@ from torus_model import torus_model
 
 class PolWave(object):
 
-    def __init__(self, dust_type, fw=True, bw=True):
+    def __init__(self, dust_type, fw=True, bw=True, folder="."):
 
         #Save the input parameters.
         self.dust_type = dust_type
         self.fw = fw
         self.bw = bw
+        self.folder = folder
 
         #Read the model. 
         self.wave_grid, self.theta_grid, self.psi_grid, self.p_grid = self.read_model()
@@ -32,7 +33,7 @@ class PolWave(object):
             suffix += "FW"
         if self.bw:
             suffix += "BW"
-        fname = "{}.hires.{}.txt".format(self.dust_type, suffix)
+        fname = "{}/{}.hires.{}.txt".format(self.folder, self.dust_type, suffix)
 
         wave_grid  = np.loadtxt(fname, max_rows=1)*u.AA
         theta_grid = np.loadtxt(fname, max_rows=1, skiprows=1)*u.deg
