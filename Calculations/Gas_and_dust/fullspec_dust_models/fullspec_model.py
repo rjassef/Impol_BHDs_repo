@@ -36,14 +36,17 @@ def get_S(psi_angles, pobj, forward, backward, theta_scattering_angles):
 #waves = np.arange(1000., 3000., 100.)*u.AA
 #waves = np.array([1000.])*u.AA
 #waves = np.array([1000., 2000., 3000.])*u.AA
-waves = np.arange(500., 3000., 100.)*u.AA
+#waves = np.arange(500., 3000., 100.)*u.AA
+waves = np.arange(500., 3000., 20.)*u.AA
 
 #This is the range of torus opening angles for which we'll calculate the integrals. 
-psi_angles = np.arange(1.0,90.1,5.0)*u.deg
+#psi_angles = np.arange(1.0,90.1,5.0)*u.deg
+psi_angles = np.arange(1.0, 90.1, 2.5)*u.deg
 #psi_angles = np.array([50.])*u.deg
 
 #This is the range of inclination angles we'll consider. 
-theta_scattering_angles = np.arange(1.0, 90.1, 5.0)*u.deg
+#theta_scattering_angles = np.arange(1.0, 90.1, 5.0)*u.deg
+theta_scattering_angles = np.arange(1.0, 90.1, 2.5)*u.deg
 #theta_scattering_angles = np.array([50.])*u.deg
 
 dust_types = ["SMC", "LMC", "MW"]
