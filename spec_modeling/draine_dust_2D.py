@@ -1,6 +1,7 @@
 import numpy as np
 import astropy.units as u
 from scipy.interpolate import RectBivariateSpline
+import os
 
 class draine_dust(object):
 
@@ -9,15 +10,17 @@ class draine_dust(object):
         self.dsigma_norm = 1*u.cm**2
         self.type = type
 
+        root_folder = "{}/Impol_Blue_HotDOGs/Impol_BHDs_repo/Calculations/Gas_and_dust/draine_models/".format(os.path.expanduser('~'))
+
         if type=='SMC':
-            p_fname = "draine_models/callscat_init_p.out_SMC_bar"
-            s_fname = "draine_models/callscat_init_i.out_SMC_bar"
+            p_fname = root_folder+"callscat_init_p.out_SMC_bar"
+            s_fname = root_folder+"callscat_init_i.out_SMC_bar"
         elif type=='LMC':
-            p_fname = "draine_models/callscat_init_p.out_LMC_avg"
-            s_fname = "draine_models/callscat_init_i.out_LMC_avg"
+            p_fname = root_folder+"callscat_init_p.out_LMC_avg"
+            s_fname = root_folder+"callscat_init_i.out_LMC_avg"
         elif type=='MW':
-            p_fname = "draine_models/callscat_init_p.out_MW_3.1"
-            s_fname = "draine_models/callscat_init_i.out_MW_3.1"
+            p_fname = root_folder+"callscat_init_p.out_MW_3.1"
+            s_fname = root_folder+"callscat_init_i.out_MW_3.1"
         else:
             print("Unknown dust type")
             return

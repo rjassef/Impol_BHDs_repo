@@ -5,9 +5,7 @@ from synphot.models import Empirical1D
 #from draine_dust_2D import draine_dust
 from scipy.optimize import minimize, LinearConstraint
 import matplotlib.pyplot as plt
-import os
-import matplotlib.transforms
-from scipy.signal import savgol_filter
+
 
 class PolModel(object):
 
@@ -28,12 +26,10 @@ class PolModel(object):
         return
 
     def load_bands(self):
-
         #Load the filters.
-        filters_folder = "{}/Impol_Blue_HotDOGs/Impol_BHDs_repo/Filter_Curves/".format(os.path.expanduser("~"))
-        R_spec = np.loadtxt(filters_folder+"M_SPECIAL_R.txt")
-        I_bess = np.loadtxt(filters_folder+"M_BESS_I.txt")
-        v_high = np.loadtxt(filters_folder+"v_HIGH.txt", skiprows=2)
+        R_spec = np.loadtxt("M_SPECIAL_R.txt")
+        I_bess = np.loadtxt("M_BESS_I.txt")
+        v_high = np.loadtxt("v_HIGH.txt", skiprows=2)
 
         R_spec = R_spec[R_spec[:,1]>0.01]
         I_bess = I_bess[I_bess[:,1]>0.01]
@@ -54,36 +50,6 @@ class PolModel(object):
 
         self.bands = [vbp, Rbp, Ibp]
         return
-
-
-    def spec_plot(self, smooth=True):
-
-        fig, ax = plt.subplots(1)
-
-        ax.set_ylim([-0.2e-16, 1.1e-16])
-        ax.set_xlim([4000., 10000.])
-
-        if smooth:
-            flam_aux = savgol_filter(self.spec.flam, 7, 3)
-            ax.plot(self.spec.lam_obs, flam_aux, label="SDSS Spec")
-        else:
-            ax.plot(self.spec.lam_obs, self.spec.flam, label="SDSS Spec")
-
-        ax.plot(self.spec.lam_obs, self.spec_model.flam_model(self.spec.lam_rest))
-        trans = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
-        for j, band in enumerate(self.bands):
-            if j==0:
-                norm = 1.
-            else: 
-                norm = 100.
-            plt.plot(band.model.points[0], band.model.lookup_table*norm, color='xkcd:grey', transform=trans, alpha=0.5)
-
-        ax.set_ylabel(r'$f_{{\lambda}}$ ({})'.format(self.spec.flam.unit))
-        ax.set_xlabel(r'$\lambda$ ({})'.format(self.spec.lam_obs.unit))
-
-        plt.show()
-
-        return 
 
 
     def get_a_b(self, pfrac_A, pfrac_B):
@@ -120,34 +86,28 @@ class PolModel(object):
 
     #Function to return the broad-band p calculated from the model.
     def model_p(self, x, scat_obj):
-        pfrac_A = scat_obj.pfrac_A(x, self.spec.lam_rest)
-        pfrac_B = scat_obj.pfrac_B(x, self.spec.lam_rest)
+        pfrac_A = scat_obj.get_pfrac_A(x, self.spec.lam_rest)
+        pfrac_B = scat_obj.get_pfrac_B(x, self.spec.lam_rest)
         a, b = self.get_a_b(pfrac_A, pfrac_B)
-        return (a**2 + b**2 + 2*a*b*np.cos(2*x[0]*u.deg))**0.5
+        return ((x[0]*a)**2 + (x[1]*b)**2 + 2*x[0]*x[1]*a*b*np.cos(2*x[2]*u.deg))**0.5
 
     def chi2(self, x, scat_obj):
+        #p_mod = get_pmod(x, dust, self.spec, self.spec_model)
         p_mod = self.model_p(x, scat_obj)
         return np.sum(((self.p_measured-p_mod)/self.p_unc)**2)
 
     #Function to find the best-fit to the polarization.
-    def fit_pol(self, scat_obj, x0, min_vals, max_vals, method=None):
+    def fit_pol(self, scat_obj, x0, min_vals, max_vals):
 
         #Set the linear constraints.
         G = np.identity(x0.shape[0])
         lincon = LinearConstraint(G, min_vals, max_vals)
 
         #Run the fit
-        self.xopt = minimize(self.chi2, x0=x0, constraints=lincon, args=(scat_obj), method=method)        
+        self.xopt = minimize(self.chi2, x0=x0, constraints=lincon, args=(scat_obj))#, method='BFGS')        
 
         #Save the best-fit model broad-band polarizations.
         self.mod_p = self.model_p(self.xopt.x, scat_obj)
-
-        #Print the results.
-        print(self.xopt.message)
-        print(self.xopt.x)
-        print(self.xopt.fun)
-        if hasattr(self.xopt, "hess_inv"):
-            print(np.diagonal((self.xopt.hess_inv))**0.5)
     
         return
 
