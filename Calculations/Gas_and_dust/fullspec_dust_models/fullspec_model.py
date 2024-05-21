@@ -37,7 +37,7 @@ def get_S(psi_angles, pobj, forward, backward, theta_scattering_angles):
 #waves = np.array([1000.])*u.AA
 #waves = np.array([1000., 2000., 3000.])*u.AA
 #waves = np.arange(500., 3000., 100.)*u.AA
-waves = np.arange(500., 3000., 20.)*u.AA
+waves = np.arange(1000., 3100., 20.)*u.AA
 
 #This is the range of torus opening angles for which we'll calculate the integrals. 
 #psi_angles = np.arange(1.0,90.1,5.0)*u.deg
