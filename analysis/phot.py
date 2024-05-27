@@ -77,12 +77,13 @@ def obeam_dao_recenter(fname, e_pos_ref, omask, data_folder, phot_folder, force=
         np.savetxt("{0:s}/{1:s}".format(phot_folder, pos_name), np.array([o_positions[:,0], o_positions[:,1]]).T)
     return o_positions
 
-def dao_recenter(fname, e_pos_ref, mask, beam, data_folder, box_size=21):
+def dao_recenter(fname, e_pos_ref, mask, beam, data_folder, box_size=11, back_sub=True): #box_size=21):
     h = fits.open("{0:s}/{1:s}".format(data_folder, fname))
-    # sigma_clip = SigmaClip(sigma=3.0)
-    # bkg_estimator = SExtractorBackground()
-    # bkg = Background2D(h[0].data, (50,50), filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
-    # h[0].data -= bkg.background
+    if back_sub:
+        sigma_clip = SigmaClip(sigma=3.0)
+        bkg_estimator = SExtractorBackground()
+        bkg = Background2D(h[0].data, (50,50), filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=mask.astype(bool))
+        h[0].data -= bkg.background
     x_ref = np.copy(e_pos_ref[:,0])
     y_ref = np.copy(e_pos_ref[:,1])
     if beam=="o":
