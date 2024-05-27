@@ -32,3 +32,7 @@ Still To Do
 * W0204-0506 spatially resolved polarization map. Is it resolved?
 
 * Understand what causes the backscattering more in detail to understand if small changes in the dust properties could increase the expected polarization fraction. 
+
+* Recentering of sources seem to be somewhat uncertain. Changed the box size from 21 to 11 and enabled the background subtraction, and that seems to potentially help, but need to determine in detail how well the re-centering is working. 
+
+* There seems to be an issue with the first image of the second set of observations of W0220+0137. The source seems to be almost gone, likely a cosmic ray rejection issue. Check all other sources/images.  
