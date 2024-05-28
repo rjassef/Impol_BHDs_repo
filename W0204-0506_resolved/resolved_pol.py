@@ -61,6 +61,8 @@ class ResolvedPol(object):
         #Default values of the offsets. Measured on the images of W0204-0506 which has a nearby star to the source. 
         self.dx_use = -0.1 
         self.dy_use = -90.5
+        self.e_pos = None
+        self.o_pos = None
 
         return
     
@@ -70,22 +72,24 @@ class ResolvedPol(object):
 
         dx = np.zeros(self.nf)
         dy = np.zeros(self.nf)
+        self.e_pos = list()
+        self.o_pos = list()
 
         for i in range(self.nf):
 
             omask = fits.open(self.mask_fnames[i].format("omask"))
             emask = fits.open(self.mask_fnames[i].format("emask"))
             fname = self.im_fnames[i]
-            e_pos = phot.dao_recenter(fname, e_pos_ref, emask[0].data, "e", ".", box_size=7)
-            o_pos = phot.dao_recenter(fname, e_pos_ref, omask[0].data, "o", ".", box_size=7)
+            self.e_pos.append(phot.dao_recenter(fname, e_pos_ref, emask[0].data, "e", ".", box_size=7))
+            self.o_pos.append(phot.dao_recenter(fname, e_pos_ref, omask[0].data, "o", ".", box_size=7))
 
-            dx[i], dy[i] = (e_pos-o_pos)[0]
+            dx[i], dy[i] = (self.e_pos[-1]-self.o_pos[-1])[0]
 
         #Save the median offsets.
         self.dx_use = np.round(np.median(dx),1)
         self.dy_use = np.round(np.median(dy),1)
 
-        return 
+        return     
 
     def find_seeing(self, ex_ref, ey_ref, x_size=24, y_size=24, stddev_0 = 1.1, show_plots=False):
 
@@ -148,28 +152,46 @@ class ResolvedPol(object):
             bkg = Background2D(im[0].data, (50,50), filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=mask[0].data.astype(bool))
             im[0].data -= bkg.background
 
-            input_wcs = WCS(naxis=2)
-            input_wcs.wcs.crpix = 1021.5, 70.0 #o_pos[0] #128.5, 128.5
-            input_wcs.wcs.cdelt = 1., 1.#-0.01, 0.01
-
-            output_wcs = WCS(naxis=2)
-            output_wcs.wcs.crpix = input_wcs.wcs.crpix + (self.dx_use, self.dy_use)
-            output_wcs.wcs.cdelt = input_wcs.wcs.cdelt
-
             if i==0:
                 oim = np.zeros((self.nf, im[0].data.shape[0], im[0].data.shape[1]))
                 eim = np.zeros(oim.shape)
-            oim_aux = im[0].data*(1-omask[0].data)
+            oim[i] = im[0].data*(1-omask[0].data)
             eim[i] = im[0].data*(1-emask[0].data)
 
-            oim[i], _ = reproject_interp((oim_aux, input_wcs), output_wcs, shape_out=eim[i].shape, order='bicubic') #order='nearest-neighbor')
+            input_wcs = WCS(naxis=2)
+            if self.e_pos is None:
+                input_wcs.wcs.crpix = 1021.5, 70.0 #o_pos[0] #128.5, 128.5
+            else:
+                input_wcs.wcs.crpix = self.o_pos[i][0]
+            input_wcs.wcs.cdelt = 1., 1.#-0.01, 0.01
+
+            output_wcs_o = WCS(naxis=2)
+            if self.o_pos is None:
+                output_wcs_o.wcs.crpix = input_wcs.wcs.crpix + (self.dx_use, self.dy_use)
+            else:
+                output_wcs_o.wcs.crpix = self.o_pos[0][0]+ (self.dx_use, self.dy_use)
+            output_wcs_o.wcs.cdelt = input_wcs.wcs.cdelt
+
+            output_wcs_e = WCS(naxis=2)
+            if self.e_pos is None:
+                output_wcs_e.wcs.crpix = input_wcs.wcs.crpix
+            else:
+                output_wcs_e.wcs.crpix = self.o_pos[0][0]
+            output_wcs_o.wcs.cdelt = input_wcs.wcs.cdelt
+
+            oim[i], _ = reproject_interp((oim[i], input_wcs), output_wcs_o, shape_out=eim[i].shape, order='bicubic') #order='nearest-neighbor')
+            if self.e_pos is not None:
+                eim[i], _ = reproject_interp((eim[i], input_wcs), output_wcs_e, shape_out=eim[i].shape, order='bicubic') #order='nearest-neighbor')
 
             #If requested, convolve images to a common PSF.
             if regularize_psf:
 
-                if target_fwhm is None:
-                    target_fwhm = np.ceil(np.max(self.seeing)*10)/10.
-                print("Target FWHM: ",target_fwhm)
+                if i==0:
+                    if target_fwhm is None:
+                        target_fwhm = np.ceil(np.max(self.seeing)*10)/10.
+                    self.target_fwhm = target_fwhm
+                    self.target_fwhm_pix = target_fwhm/(im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"])
+                    print("Target FWHM: ",target_fwhm)
 
                 if self.seeing[i] < target_fwhm:
                     stddev_image = gaussian_fwhm_to_sigma*self.seeing[i]/(im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"])
