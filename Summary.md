@@ -25,6 +25,8 @@ Main results
 Still To Do
 -----------
 
+* Make NH plots.
+
 * Build an outflow reflection model for the scattering through the same formalism of the torus scattering model. 
 
 * Check if some bad fits to W0116 are simply lack of convergence rather than no model possible. 
