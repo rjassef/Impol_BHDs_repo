@@ -91,7 +91,7 @@ class ResolvedPol(object):
 
         return     
 
-    def find_seeing(self, ex_ref, ey_ref, x_size=24, y_size=24, stddev_0 = 1.1, show_plots=False):
+    def find_seeing(self, ex_ref, ey_ref, x_size=24, y_size=24, stddev_0 = 1.1, x_mean_0=None, y_mean_0=None, show_plots=False):
 
         self.seeing = np.zeros(self.nf)
 
@@ -107,7 +107,11 @@ class ResolvedPol(object):
             #z_err = im[1].data[iy1:iy2, ix1:ix2]
             z -= np.median(z)
 
-            p_init = models.Gaussian2D(x_mean=x_size/2, y_mean=y_size/2, x_stddev=stddev_0, y_stddev=stddev_0)#x_stddev=0.95, y_stddev=0.95)
+            if x_mean_0 is None:
+                x_mean_0 = x_size/2
+            if y_mean_0 is None:
+                y_mean_0 = y_size/2
+            p_init = models.Gaussian2D(x_mean=x_mean_0, y_mean=y_mean_0, x_stddev=stddev_0, y_stddev=stddev_0)#x_stddev=0.95, y_stddev=0.95)
             #stddev_tied = lambda model: model.x_stddev
 
             #p_init.y_stddev.tied = stddev_tied
