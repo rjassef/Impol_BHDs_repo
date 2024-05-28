@@ -10,6 +10,7 @@ from astropy.modeling import models, fitting
 from astropy.visualization import ZScaleInterval, LinearStretch, ImageNormalize
 import matplotlib.pyplot as plt
 import subprocess
+import re
 
 import sys
 sys.path.append("../analysis")
@@ -33,6 +34,21 @@ class ResolvedPol(object):
         #Common part of output file names. 
         self.ref_name = "{}.{}.{}".format(object, mjd, band)
 
+        #Search for all the files that match the input parameter criteria.
+        if mjd=="All": 
+            ls_output = subprocess.run("ls {}/science_reduced_img.{}.*.{}.chip{}.*.fits".format(data_folder,object,band,ichip), shell=True, capture_output=True)
+        else:
+            ls_output = subprocess.run("ls {}/science_reduced_img.{}.{}.{}.chip{}.*.fits".format(data_folder,object,mjd,band,ichip), shell=True, capture_output=True)
+        self.im_fnames = ls_output.stdout.decode('utf8').split()
+        self.mask_fnames = list()
+        for im_fname in self.im_fnames:
+            im_fname = re.sub(data_folder, mask_folder, im_fname)
+            im_fname = re.sub("crz","{}",im_fname)
+            self.mask_fnames.append(im_fname)
+
+        #Set a variabile with the number of files. 
+        self.nf = len(self.im_fnames)
+
         #Array to hold the seeing values.
         self.seeing = None
 
@@ -52,26 +68,18 @@ class ResolvedPol(object):
 
         e_pos_ref = np.vstack((ex_ref,ey_ref)).T
 
-        dx = np.zeros(8)
-        dy = np.zeros(8)
-        self.th = np.zeros(8)
+        dx = np.zeros(self.nf)
+        dy = np.zeros(self.nf)
 
-        for i in range(1,9):
-            fname = "{}/science_reduced_img.{}.chip{}.{}.crz.fits".format(self.data_folder, self.ref_name, self.ichip, i)
-            mname = "{}/science_reduced_img.{}.chip{}.{}.{{}}.fits".format(self.mask_folder, self.ref_name, self.ichip, i)
+        for i in range(self.nf):
 
-            im = fits.open(fname)
-            mask  = fits.open(mname.format("mask"))
-            omask = fits.open(mname.format("omask"))
-            emask = fits.open(mname.format("emask"))
-        
-            fname = "science_reduced_img.W0204-0506.60207.R_SPECIAL.chip1.{}.crz.fits".format(i)
-            e_pos = phot.dao_recenter(fname, e_pos_ref, emask[0].data, "e", "../analysis/crz/", box_size=7)
-            o_pos = phot.dao_recenter(fname, e_pos_ref, omask[0].data, "o", "../analysis/crz/", box_size=7)
+            omask = fits.open(self.mask_fnames[i].format("omask"))
+            emask = fits.open(self.mask_fnames[i].format("emask"))
+            fname = self.im_fnames[i]
+            e_pos = phot.dao_recenter(fname, e_pos_ref, emask[0].data, "e", ".", box_size=7)
+            o_pos = phot.dao_recenter(fname, e_pos_ref, omask[0].data, "o", ".", box_size=7)
 
-            dx[i-1], dy[i-1] = (e_pos-o_pos)[0]
-
-            self.th[i-1] = im[0].header["HIERARCH ESO INS RETA2 ROT"]
+            dx[i], dy[i] = (e_pos-o_pos)[0]
 
         #Save the median offsets.
         self.dx_use = np.round(np.median(dx),1)
@@ -79,15 +87,12 @@ class ResolvedPol(object):
 
         return 
 
-    def find_seeing(self, ex_ref, ey_ref, x_size=24, y_size=24, show_plots=False):
+    def find_seeing(self, ex_ref, ey_ref, x_size=24, y_size=24, stddev_0 = 1.1, show_plots=False):
 
-        self.seeing = np.zeros(8)
+        self.seeing = np.zeros(self.nf)
 
-        for i in range(1,9):
-            fname = "{}/science_reduced_img.{}.chip{}.{}.crz.fits".format(self.data_folder, self.ref_name, self.ichip, i)
-            #mname = "{}/science_reduced_img.{}.chip{}.{}.{{}}.fits".format(self.mask_folder, self.ref_name, self.ichip, i)
-
-            im = fits.open(fname)
+        for i in range(self.nf):
+            im = fits.open(self.im_fnames[i])
 
             ix1 = int(ex_ref-x_size/2)
             ix2 = int(ex_ref+x_size/2)
@@ -98,7 +103,7 @@ class ResolvedPol(object):
             #z_err = im[1].data[iy1:iy2, ix1:ix2]
             z -= np.median(z)
 
-            p_init = models.Gaussian2D(x_mean=x_size/2, y_mean=y_size/2, x_stddev=1.1, y_stddev=1.1)#x_stddev=0.95, y_stddev=0.95)
+            p_init = models.Gaussian2D(x_mean=x_size/2, y_mean=y_size/2, x_stddev=stddev_0, y_stddev=stddev_0)#x_stddev=0.95, y_stddev=0.95)
             #stddev_tied = lambda model: model.x_stddev
 
             #p_init.y_stddev.tied = stddev_tied
@@ -113,7 +118,7 @@ class ResolvedPol(object):
 
             fit_p = fitting.LevMarLSQFitter()
             p = fit_p(p_init, x, y, z)#, weights=1./z_err)
-            self.seeing[i-1] = np.mean([p.x_fwhm,p.y_fwhm])*im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"]
+            self.seeing[i] = np.mean([p.x_fwhm,p.y_fwhm])*im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"]
             #print(p.x_fwhm, p.y_fwhm)
 
             if show_plots:
@@ -127,14 +132,16 @@ class ResolvedPol(object):
     
     def get_pol(self, regularize_psf=False, target_fwhm=None):
 
-        for i in range(1,9):
-            fname = "{}/science_reduced_img.{}.chip{}.{}.crz.fits".format(self.data_folder, self.ref_name, self.ichip, i)
-            mname = "{}/science_reduced_img.{}.chip{}.{}.{{}}.fits".format(self.mask_folder, self.ref_name, self.ichip, i)
+        self.th = np.zeros(self.nf)
 
-            im = fits.open(fname)
+        for i in range(self.nf):
+            im = fits.open(self.im_fnames[i])
+            mname = self.mask_fnames[i]
             mask  = fits.open(mname.format("mask"))
             omask = fits.open(mname.format("omask"))
             emask = fits.open(mname.format("emask"))
+
+            self.th[i] = im[0].header["HIERARCH ESO INS RETA2 ROT"]
 
             sigma_clip = SigmaClip(sigma=3.0)
             bkg_estimator = SExtractorBackground()
@@ -149,31 +156,32 @@ class ResolvedPol(object):
             output_wcs.wcs.crpix = input_wcs.wcs.crpix + (self.dx_use, self.dy_use)
             output_wcs.wcs.cdelt = input_wcs.wcs.cdelt
 
-            if i==1:
-                oim = np.zeros((8, im[0].data.shape[0], im[0].data.shape[1]))
+            if i==0:
+                oim = np.zeros((self.nf, im[0].data.shape[0], im[0].data.shape[1]))
                 eim = np.zeros(oim.shape)
             oim_aux = im[0].data*(1-omask[0].data)
-            eim[i-1] = im[0].data*(1-emask[0].data)
+            eim[i] = im[0].data*(1-emask[0].data)
 
-            oim[i-1], _ = reproject_interp((oim_aux, input_wcs), output_wcs, shape_out=eim[i-1].shape, order='bicubic') #order='nearest-neighbor')
+            oim[i], _ = reproject_interp((oim_aux, input_wcs), output_wcs, shape_out=eim[i].shape, order='bicubic') #order='nearest-neighbor')
 
             #If requested, convolve images to a common PSF.
             if regularize_psf:
 
                 if target_fwhm is None:
                     target_fwhm = np.ceil(np.max(self.seeing)*10)/10.
+                print("Target FWHM: ",target_fwhm)
 
-                if self.seeing[i-1] < target_fwhm:
-                    stddev_image = gaussian_fwhm_to_sigma*self.seeing[i-1]/(im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"])
+                if self.seeing[i] < target_fwhm:
+                    stddev_image = gaussian_fwhm_to_sigma*self.seeing[i]/(im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"])
                     stddev_targ = gaussian_fwhm_to_sigma*target_fwhm/(im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"])
                     stddev = (stddev_targ**2-stddev_image**2)**0.5
                     print(stddev, stddev * im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"])
                     gauss = Gaussian2DKernel(x_stddev=stddev)
-                    eim[i-1] = convolve(eim[i-1], gauss, mask=emask[0].data)
-                    oim[i-1] = convolve(oim[i-1], gauss, mask=emask[0].data)
+                    eim[i] = convolve(eim[i], gauss, mask=emask[0].data)
+                    oim[i] = convolve(oim[i], gauss, mask=emask[0].data)
 
-            fits.writeto("{}/oim.{}.{}.fits".format(self.stamps_folder, self.ref_name, i), oim[i-1, self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z], overwrite=True)
-            fits.writeto("{}/eim.{}.{}.fits".format(self.stamps_folder, self.ref_name, i), eim[i-1, self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z], overwrite=True)
+            fits.writeto("{}/oim.{}.{}.fits".format(self.stamps_folder, self.ref_name, i), oim[i, self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z], overwrite=True)
+            fits.writeto("{}/eim.{}.{}.fits".format(self.stamps_folder, self.ref_name, i), eim[i, self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z], overwrite=True)
 
         #Get the Stoke parameter images. 
         all_th_S = np.unique(self.th)
