@@ -5,7 +5,7 @@ Main results
 
     * W0019-1046:  6.4 $\pm$ 0.6%
     * W0204-0505: 25.3 $\pm$ 0.6%
-    * W0220+0137: 12.3 $\pm$ 0.3%
+    * W0220+0137: 14.0 $\pm$ 0.3%
     * W0831+0140:  6.9 $\pm$ 0.4%
 
 * W0116-0505 shows highly significant polarization in $V$ and $I$ as well. 
@@ -35,4 +35,9 @@ Still To Do
 
 * Recentering of sources seem to be somewhat uncertain. Changed the box size from 21 to 11 and enabled the background subtraction, and that seems to potentially help, but need to determine in detail how well the re-centering is working. 
 
-* There seems to be an issue with the first image of the second set of observations of W0220+0137. The source seems to be almost gone, likely a cosmic ray rejection issue. Check all other sources/images.  
+Solved
+------
+
+* There seems to be an issue with the first image of the second set of observations of W0220+0137. The source seems to be almost gone, likely a cosmic ray rejection issue. Check all other sources/images.
+
+    * 28/05/2024: One image of W0116 in I was also affected. Changed objlim in astroscrappy.detec_cosmics to 10 and that solved the issues. 
