@@ -7,8 +7,9 @@ import crz
 import phot
 import filter_fitsfiles
 import stokes
+import im_display
 
-def get_pol(obj_id, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder, ob_ids=[None], mjds=None, chip="1", force=False, r_ap=2., r_an_in=4., r_an_out=7., use_masks=True):
+def get_pol(obj_id, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder, ob_ids=[None], mjds=None, chip="1", force=False, r_ap=2., r_an_in=4., r_an_out=7., use_masks=True, back_sub_dao=True, show_recenter_figs=False):
 
     if mjds is None:
         mjds = [None]*len(ob_ids)
@@ -34,21 +35,27 @@ def get_pol(obj_id, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder,
             #Get the masks if needed.
             mask, omask, emask = masks.read_masks(fname, mask_folder, rim_folder, force=force, chip=chip)
             if not use_masks:
-                mask = np.zeros(mask.shape, dtype=np.int32)
-                omask = np.zeros(mask.shape, dtype=np.int32)
-                emask = np.zeros(mask.shape, dtype=np.int32)
+                # mask = np.zeros(mask.shape, dtype=np.int32)
+                # omask = np.zeros(mask.shape, dtype=np.int32)
+                # emask = np.zeros(mask.shape, dtype=np.int32)
+                mask = np.zeros(mask.shape, dtype=bool)
+                omask = np.zeros(mask.shape, dtype=bool)
+                emask = np.zeros(mask.shape, dtype=bool)
             
             #Clean the cosmic rays if needed.
             crzname = crz.crz_clean(fname, mask, rim_folder, crz_folder, force=force)
 
             #Recenter the source.
-            e_pos = phot.dao_recenter(crzname, e_pos_ref, emask, "e", crz_folder)
+            e_pos = phot.dao_recenter(crzname, e_pos_ref, emask, "e", crz_folder, back_sub=back_sub_dao)
 
             #Get the e_beam_photometry
             esum[crzname], eerr[crzname] = phot.run_phot(crzname, emask, e_pos, r_ap, r_an_in, r_an_out, crz_folder)
 
             #Now find the o-beam sources.
-            o_pos = phot.dao_recenter(crzname, e_pos_ref, omask, "o", crz_folder)
+            o_pos = phot.dao_recenter(crzname, e_pos_ref, omask, "o", crz_folder, back_sub=back_sub_dao)
+
+            if show_recenter_figs:
+                im_display.im_display(crzname, crz_folder, e_pos, o_pos)
 
             #Get the o_beam_photometry
             osum[crzname], oerr[crzname] = phot.run_phot(crzname, omask, o_pos, r_ap, r_an_in, r_an_out, crz_folder)
