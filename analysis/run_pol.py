@@ -2,7 +2,7 @@ from get_pol import get_pol
 import filter_fitsfiles
 from myparse import myparse
 
-def run_pol(obj_name, obs_params, ex_ref, ey_ref, r_ap=1.0, save_output=True, back_sub_dao=True, use_masks=True, show_recenter_figs=False):
+def run_pol(obj_name, obs_params, ex_ref, ey_ref, r_ap=1.0, save_output=True, back_sub_dao=True, use_masks=True, show_recenter_figs=False, objlim=10):
 
     args = myparse()
 
@@ -15,7 +15,7 @@ def run_pol(obj_name, obs_params, ex_ref, ey_ref, r_ap=1.0, save_output=True, ba
         ob_ids = obs_params[filter]["ob_ids"]
         mjds = obs_params[filter]["mjds"]
 
-        pol_frac, pol_angle, epol_frac, epol_angle = get_pol(obj_name, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder, ob_ids=ob_ids, mjds=mjds, r_ap=r_ap, force=args.force_new, back_sub_dao=back_sub_dao, use_masks=use_masks, show_recenter_figs=show_recenter_figs)
+        pol_frac, pol_angle, epol_frac, epol_angle = get_pol(obj_name, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder, ob_ids=ob_ids, mjds=mjds, r_ap=r_ap, force=args.force_new, back_sub_dao=back_sub_dao, use_masks=use_masks, show_recenter_figs=show_recenter_figs, objlim=objlim)
 
         if save_output:
             fname = "{}_pol_{}".format(obj_name, filter)

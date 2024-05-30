@@ -18,6 +18,8 @@ ey_ref = 70.
 
 #Go through each of the objects and call run_pol. 
 for obj_name in obj_names:
+    if obj_name != "BD-14 4922":
+        continue
     print(obj_name)
     aux_log = stds_log[stds_log['Target']==obj_name]
 
@@ -31,4 +33,10 @@ for obj_name in obj_names:
         obs_params[filt]["mjds"] = obs_params[filt]["mjds"].data.astype(str).tolist()
         obs_params[filt]["name"] = [None]*len(obs_params[filt]["mjds"])
 
-    run_pol(obj_name, obs_params, ex_ref, ey_ref, use_masks=False, show_recenter_figs=False)
+    objlim = 10
+    r_ap = 1.0
+    if obj_name == "BD-14 4922":
+        objlim = 100000000
+        r_ap = 0.7
+
+    run_pol(obj_name, obs_params, ex_ref, ey_ref, use_masks=False, show_recenter_figs=False, objlim=objlim, r_ap=r_ap)

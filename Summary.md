@@ -21,6 +21,8 @@ Main results
 
 * W0204-0506 shows a higher polarization fraction than possible with most dust mixtures. However gas is unlikely as the UV is very extended in HST. The only dust model that approaches 25% polarization in the R-band at z=2.1 is LMC dust with only backscattering. 
 
+* Use a smaller aperture, except for W0204-0506, for the spatially integrated measurements of the polarization. 
+
 
 Still To Do
 -----------

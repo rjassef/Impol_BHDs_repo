@@ -9,7 +9,7 @@ import filter_fitsfiles
 import stokes
 import im_display
 
-def get_pol(obj_id, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder, ob_ids=[None], mjds=None, chip="1", force=False, r_ap=2., r_an_in=4., r_an_out=7., use_masks=True, back_sub_dao=True, show_recenter_figs=False):
+def get_pol(obj_id, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder, ob_ids=[None], mjds=None, chip="1", force=False, r_ap=2., r_an_in=4., r_an_out=7., use_masks=True, back_sub_dao=True, show_recenter_figs=False, objlim=10):
 
     if mjds is None:
         mjds = [None]*len(ob_ids)
@@ -43,7 +43,7 @@ def get_pol(obj_id, ex_ref, ey_ref, rim_folder, filter, mask_folder, crz_folder,
                 emask = np.zeros(mask.shape, dtype=bool)
             
             #Clean the cosmic rays if needed.
-            crzname = crz.crz_clean(fname, mask, rim_folder, crz_folder, force=force)
+            crzname = crz.crz_clean(fname, mask, rim_folder, crz_folder, force=force, objlim=objlim)
 
             #Recenter the source.
             e_pos = phot.dao_recenter(crzname, e_pos_ref, emask, "e", crz_folder, back_sub=back_sub_dao)
