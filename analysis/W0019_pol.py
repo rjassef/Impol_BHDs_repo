@@ -11,19 +11,19 @@ obs_params[filt] = dict()
 obs_params[filt]["ob_ids"] = [
     3565057, 
     3565577, 
-    [3565057, 3565577],
+    #[3565057, 3565577],
     None
 ]
 obs_params[filt]["mjds"] = [
     "60201", 
     "60202",
-    ["60201", "60202"],
+    #["60201", "60202"],
     None  
 ]
 obs_params[filt]["name"] = [
     None,
     None,
-    "Combined",
+    #"Combined",
     None
 ]
 

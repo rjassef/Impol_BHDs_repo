@@ -31,7 +31,10 @@ def run_pol(obj_name, obs_params, ex_ref, ey_ref, r_ap=1.0, save_output=True, ba
                         cato.write("{0:15s} ".format("All"))
                     else:
                         cato.write("{0:15d} ".format(ob_id))
-                cato.write("{0:10.4f} {1:10.4f} {2:10.2f} {3:10.2f}\n".format(pol_frac[0][k], epol_frac[0][k], pol_angle[0][k], epol_angle[0][k]))
+                cato.write("{0:10.4f} {1:10.4f} {2:10.2f} {3:10.2f}".format(pol_frac[0][k], epol_frac[0][k], pol_angle[0][k], epol_angle[0][k]))
+                if "mean_mjd" in obs_params[filter]:
+                    cato.write("{:10.2f}".format(obs_params[filter]["mean_mjd"][k]))
+                cato.write("\n")
             cato.close()
 
     return
