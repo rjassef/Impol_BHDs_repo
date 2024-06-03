@@ -4,6 +4,7 @@ import multiprocessing as mp
 from functools import partial
 import subprocess
 import os
+import re
 
 import sys
 sys.path.append("../")
@@ -73,15 +74,17 @@ for dust_type in dust_types:
         if os.path.exists(fname):
             continue
         cato = open(fname,"w")
-        for lam in waves:
-            cato.write("{:.1f} ".format(lam.value))
-        cato.write("\n")
-        for th in theta_scattering_angles:
-            cato.write("{:.1f} ".format(th.value))
-        cato.write("\n")
-        for psi in psi_angles:
-            cato.write("{:.1f} ".format(psi.value))
-        cato.write("\n")            
+        s1_cato = open(re.sub(".txt",".S1.txt",fname),"w")
+        for cato_aux in [cato, s1_cato]:
+            for lam in waves:
+                cato_aux.write("{:.1f} ".format(lam.value))
+            cato_aux.write("\n")
+            for th in theta_scattering_angles:
+                cato_aux.write("{:.1f} ".format(th.value))
+            cato_aux.write("\n")
+            for psi in psi_angles:
+                cato_aux.write("{:.1f} ".format(psi.value))
+            cato_aux.write("\n")            
 
         for l, lam_targ in enumerate(waves):
             pobj = draine_dust(lam_targ, dust_type)
@@ -107,4 +110,6 @@ for dust_type in dust_types:
                 p_array = -S[:,:,1]/S[:,:,0]
 
                 np.savetxt(cato, p_array)
+                np.savetxt(s1_cato, S[:,:,0])
         cato.close()
+        s1_cato.close()
