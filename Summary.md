@@ -27,11 +27,11 @@ Main results
 Still To Do
 -----------
 
-* Make NH plots.
+* Make NH plots. Need to consider bluening + reddening of the input spectrum for I. Could affect the estimates of p as well. 
 
 * Build an outflow reflection model for the scattering through the same formalism of the torus scattering model. 
 
-* Check if some bad fits to W0116 are simply lack of convergence rather than no model possible. 
+* Check if some bad fits to W0116 are simply lack of convergence rather than no model possible. Actually, do an MCMC fit to ensure we are properly mapping the parameter space.  
 
 * W0204-0506 spatially resolved polarization map. Is it resolved?
 
