@@ -27,6 +27,8 @@ Main results
 Still To Do
 -----------
 
+* The SED fits should include the HST photometry for the three objects that have it (can just copy from Assef et al. 2020 fits). For fraction of light reflected, it does make some difference at least for W0116. 
+
 * Make NH plots. Need to consider bluening + reddening of the input spectrum for I. Could affect the estimates of p as well. 
 
 * Build an outflow reflection model for the scattering through the same formalism of the torus scattering model. 
