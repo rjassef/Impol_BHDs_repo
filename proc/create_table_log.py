@@ -7,58 +7,71 @@ import subprocess
 
 #Get the header items we will pull from each fits file.
 hkws = {
-    "Target"     : "HIERARCH ESO OBS TARG NAME",
-    "Program_ID" : "HIERARCH ESO OBS PROG ID",
-    "OB_Name"    : "HIERARCH ESO OBS NAME",
-    "OB_ID"      : "HIERARCH ESO OBS ID",
-    "AIRMASS_1"  : "HIERARCH ESO TEL AIRM START",
-    "AIRMASS_2"  : "HIERARCH ESO TEL AIRM END",
-    "MJD"        : "MJD-OBS",
-    "SEEING_1"   : "HIERARCH ESO TEL AMBI FWHM START",
-    "SEEING_2"   : "HIERARCH ESO TEL AMBI FWHM END",
-    "Filter"     : "HIERARCH ESO INS FILT1 NAME",
-    "MJD_folder" : None,
+    "Target"      : "HIERARCH ESO OBS TARG NAME",
+    "Program_ID"  : "HIERARCH ESO OBS PROG ID",
+    "OB_Name"     : "HIERARCH ESO OBS NAME",
+    "OB_ID"       : "HIERARCH ESO OBS ID",
+    "Ret Angle"   : "HIERARCH ESO INS RETA2 ROT",
+    "Exptime_real": "HIERARCH ESO DET WIN1 DIT1", #"HIERARCH ESO INS SHUT EXPTIME",
+    "Exptime_req" : "HIERARCH ESO DET WIN1 UIT1",
+    "AIRMASS_1"   : "HIERARCH ESO TEL AIRM START",
+    "AIRMASS_2"   : "HIERARCH ESO TEL AIRM END",
+    "MJD"         : "MJD-OBS",
+    "SEEING_1"    : "HIERARCH ESO TEL AMBI FWHM START",
+    "SEEING_2"    : "HIERARCH ESO TEL AMBI FWHM END",
+    "Filter"      : "HIERARCH ESO INS FILT1 NAME",
+    "MJD_folder"  : None,
 }
 
 
 #These are the folders we will explore for fits files.
+# mjd_folders = dict()
+# mjd_folders["W0116-0505"] = [
+#     59135,
+#     59136,
+#     59137,
+#     60143,
+#     60146,
+#     60148,
+#     60201,
+# ]
+# mjd_folders["STD"] = [
+#     59117,
+#     59134,
+#     60147,
+#     60148,
+#     60158,
+#     60201,
+#     60223,
+#     60238,
+#     60293,
+# ]
+# mjd_folders["W0019-1046"] = [
+#     60201,
+#     60202,
+# ]
+# mjd_folders["W0220+0137"] = [
+#     60201,
+#     60207,
+# ]
+# mjd_folders["W0204-0506"] = [
+#     60207,
+#     60209,
+# ]
+# mjd_folders["W0831+0140"] = [
+#     60290,
+#     60291,
+# ]
+
+#These are the folders we will explore for fits files.
 mjd_folders = dict()
-mjd_folders["W0116-0505"] = [
-    59135,
-    59136,
-    59137,
-    60143,
-    60146,
-    60148,
-    60201,
-]
-mjd_folders["STD"] = [
-    59117,
-    59134,
-    60147,
-    60148,
-    60158,
-    60201,
-    60223,
-    60238,
-    60293,
-]
-mjd_folders["W0019-1046"] = [
-    60201,
-    60202,
-]
-mjd_folders["W0220+0137"] = [
-    60201,
-    60207,
-]
-mjd_folders["W0204-0506"] = [
-    60207,
-    60209,
-]
-mjd_folders["W0831+0140"] = [
-    60290,
-    60291,
-]
+ls_output = subprocess.run("ls -d */*/POLARIMETRY", shell=True, capture_output=True)
+for fold in ls_output.stdout.decode('utf8').split():
+    obj, mjd, _ = fold.split("/")
+    if obj not in mjd_folders:
+        mjd_folders[obj] = list()
+    mjd_folders[obj].append(int(float(mjd)))
+
 
 for fold1 in mjd_folders.keys():
     for fold2 in mjd_folders[fold1]:
@@ -77,7 +90,10 @@ for fold1 in mjd_folders.keys():
                 if key == "MJD_folder":
                     new_row.append(fold2)
                 else:
-                    new_row.append(hdu[0].header[hkws[key]])
+                    try:
+                        new_row.append(hdu[0].header[hkws[key]])
+                    except KeyError:
+                        print(fname, key)
             hdu.close()
 
             #If the table to hold the log does no exist, create it. 
