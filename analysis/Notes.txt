@@ -1,0 +1,15 @@
+Zero Pol Standards
+
+WD 0310-688 R 59117: OK
+WD 1344+106 v 60148: OK
+WD 1344+106 I 60148: OK
+WD 2039-202 R 59134: OK
+WD 2039-202 R 60201: OK
+WD 2359-434 I 60201: OK
+WD 2359-434 R 60201: Potentially out of focus, but likely OK.
+WD 2359-434 R 60293: Very high background. Potentially observed through clouds? Night log says it was clear. Observations were done around 8pm (depending on how UT to Chile converts) in mid December, so perhaps there was still too much sun light?
+
+BD-12 5133  R 59134: OK, although the first four frame may be slightly out of focus.
+BD-12 5133  v 60148: OK
+BD-14 4922  I 60238: Out of focus. Do not use. 
+Vela1       I 60238: Mostly OK, a couple of the images look like the PSF is a little too broad. 
