@@ -2,6 +2,9 @@
 *.fits
 rawdata/
 log.txt
+*.epos
+*.opos
+*.phot
 
 #Ignore mac specific files. 
 .DS_Store
