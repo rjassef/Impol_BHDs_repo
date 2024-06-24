@@ -273,12 +273,15 @@ class RunPhot(object):
         return
 
 
-    def find_seeing(self, ex_ref0, ey_ref0, x_size=24, y_size=24, stddev_0 = 1.1, x_mean_0=None, y_mean_0=None, show_plots=False, ob_ids=None, mjds=None, chips=None):
+    def find_seeing(self, ex_ref0, ey_ref0, x_size=24, y_size=24, stddev_0 = None, x_mean_0=None, y_mean_0=None, show_plots=False, ob_ids=None, mjds=None, chips=None):
 
         im_fnames = self.pdata.list_of_filenames(ob_ids=ob_ids, mjds=mjds, chips=chips)
         nf = len(im_fnames)
 
         self.seeing = np.zeros(nf)
+
+        if stddev_0 is None:
+            stddev_0 = np.ones(nf) * 1.1
 
         for i in range(nf):
             bkg_name = re.sub(".fits",".bkg.fits",im_fnames[i])

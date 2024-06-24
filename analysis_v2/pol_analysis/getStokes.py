@@ -31,7 +31,7 @@ class GetStokes(object):
         return
 
 
-    def get_QU_with_errors(self):
+    def get_QU_with_errors(self, e_pos_ref=None):
 
         #First, add all the observed e-beam and o-beam fluxes. This is what was recommended by A. Cikotta.
         f_e = dict()
@@ -59,8 +59,11 @@ class GetStokes(object):
         n_resamp = 1000
         for th in f_e.keys():
             F[th] = (f_o[th]-f_e[th])/(f_o[th]+f_e[th])
-            f_e_resamp = np.random.normal(f_e[th], ef_e2[th]**0.5, (n_resamp, len(f_e[th])))
-            f_o_resamp = np.random.normal(f_o[th], ef_o2[th]**0.5, (n_resamp, len(f_o[th])))
+            # f_e_resamp = np.random.normal(f_e[th], ef_e2[th]**0.5, (n_resamp, len(f_e[th])))
+            # f_o_resamp = np.random.normal(f_o[th], ef_o2[th]**0.5, (n_resamp, len(f_o[th])))
+            resamp_shape = np.concatenate([[n_resamp],f_e[th].shape])
+            f_e_resamp = np.random.normal(f_e[th], ef_e2[th]**0.5, resamp_shape)
+            f_o_resamp = np.random.normal(f_o[th], ef_o2[th]**0.5, resamp_shape)
             F_resamp[th] = (f_o_resamp-f_e_resamp)/(f_o_resamp+f_e_resamp)
 
         #Finally, estimate the Stokes Q and U parameters.
@@ -77,9 +80,13 @@ class GetStokes(object):
             U_resamp += (2./N) * F_resamp[th] * np.sin(4.*th_rad)        
 
         #Subtract the background. We approximate the position to that of the reference image.
-        e_pos_ref = np.loadtxt("{}/{}".format(self.pdata.phot_folder, re.sub(".fits",".epos",fname)))
-        ex = e_pos_ref[:,0]
-        ey = e_pos_ref[:,1]
+        if e_pos_ref is None:
+            e_pos_ref = np.loadtxt("{}/{}".format(self.pdata.phot_folder, re.sub(".fits",".epos",fname)))
+            ex = e_pos_ref[:,0]
+            ey = e_pos_ref[:,1]
+        else:
+            ex = np.array([e_pos_ref[0]])
+            ey = np.array([e_pos_ref[1]])
         m = re.search("chip(.)", list(self.esum.keys())[0])
         ichip = m.group(1)
         Q_back = self.QU_background(ex, ey, "Q", ichip)
