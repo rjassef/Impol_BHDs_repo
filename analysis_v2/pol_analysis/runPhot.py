@@ -86,12 +86,6 @@ class RunPhot(object):
                     epos = self.ebeam_dao_find(fname)
                     if self.pdata.bband == "v_HIGH":
                         epos = epos[epos[:,1]<500.]
-                    # if self.only_bhd:
-                    #     dist2 = (epos[:,0]-self.ex_bhd)**2 + (epos[:,1]-self.ey_bhd)**2
-                    #     k = np.argmin(dist2)
-                    #     epos = epos[k:k+2]
-                    #     print(epos)
-                    #     input()
                 else: 
                     epos = self.dao_recenter(fname, self.e_pos_ref, "e", box_size)           
                 np.savetxt("{0:s}/{1:s}".format(self.pdata.phot_folder, epos_fname), epos)
@@ -178,11 +172,6 @@ class RunPhot(object):
                 x[i] = x_ref[i]
                 y[i] = y_ref[i]
                       
-        # for i in range(len(x)):
-        #     if np.isnan(x[i]) or np.isnan(y[i]):
-        #         print("Could not recenter {}-beam position for source {} in file {}. Reverting to reference position.".format(beam, i, fname))
-        #         x[i] = x_ref
-        #         y[i] = y_ref
         h.close()
 
         pos = np.vstack((x,y)).T
@@ -211,11 +200,8 @@ class RunPhot(object):
             if apply_convolution:
                 target_seeing = np.ceil(np.max(self.seeing)*10)/10.
                 kernel_fwhm = (target_seeing**2-self.seeing[ifname]**2)**0.5/pixscale
-                #kernel_size = 2*int(kernel_fwhm)-1
                 kernel_size = 2*int(target_seeing/pixscale)-1
-                #print(target_seeing, self.seeing[ifname], kernel_fwhm, kernel_size)
                 kernel = make_2dgaussian_kernel(kernel_fwhm, size=kernel_size)
-                #kernel = make_2dgaussian_kernel(2.0/pixscale, size=2*int(2.0/pixscale)-1)
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', AstropyWarning)
                     convolved_data = convolve(h[0].data, kernel, mask=mask)
@@ -234,11 +220,6 @@ class RunPhot(object):
             #Calculate the photometry.
             e_phot_table = aperture_photometry(h[0].data, [e_aps], mask=emask, error=h[1].data)
             o_phot_table = aperture_photometry(h[0].data, [o_aps], mask=omask, error=h[1].data)
-            # e_err_table  = aperture_photometry((h[1].data)**2, [e_aps], mask=emask)
-            # o_err_table  = aperture_photometry((h[1].data)**2, [o_aps], mask=omask)
-            # print(e_phot_table)
-            # print(e_err_table['aperture_sum_0']**0.5)
-            # input()
 
             if resubtract_background:
 
@@ -252,7 +233,6 @@ class RunPhot(object):
                 e_annulus_masks = e_anns.to_mask(method='center')
                 e_bkg_mean = np.zeros(len(epos))
                 e_bkg_sig  = np.zeros(len(epos))
-                e_bkg_mean_err2 = np.zeros(len(epos))
                 for k, ann_mask in enumerate(e_annulus_masks):
                     ann_data = ann_mask.multiply(h[0].data*np.where(emask,0,1))
                     ann_data_1d = ann_data[ann_data>0]
@@ -260,28 +240,18 @@ class RunPhot(object):
                 o_annulus_masks = o_anns.to_mask(method='center')
                 o_bkg_mean = np.zeros(len(opos))
                 o_bkg_sig  = np.zeros(len(opos))
-                e_bkg_mean_err2 = np.zeros(len(opos))
                 for k, ann_mask in enumerate(o_annulus_masks):
                     ann_data = ann_mask.multiply(h[0].data*np.where(omask,0,1))
                     ann_data_1d = ann_data[ann_data>0]
                     o_bkg_mean[k], _, o_bkg_sig[k] = sigma_clipped_stats(ann_data_1d)
 
-                #Subtract the background.
+                #Get the background level.
                 e_bkg_sum = e_bkg_mean * e_aps.area
-                #e_final_sum = e_phot_table['aperture_sum_0'] - e_bkg_sum
                 o_bkg_sum = o_bkg_mean * o_aps.area
-                #o_final_sum = o_phot_table['aperture_sum_0'] - o_bkg_sum
 
-                #Get the uncertainty
+                #Get the background uncertainty
                 e_bkg_sum_err2 = e_bkg_sig**2 * (e_aps.area)**2 / (e_anns.area)**2
                 o_bkg_sum_err2 = o_bkg_sig**2 * (o_aps.area)**2 / (o_anns.area)**2
-                #e_final_error = (e_err_table['aperture_sum_0'] + e_bkg_sum_err2)**0.5
-                #o_final_error = (o_err_table['aperture_sum_0'] + o_bkg_sum_err2)**0.5
-
-                # esum = e_final_sum
-                # osum = o_final_sum
-                # esum_err = e_final_error
-                # osum_err = o_final_error
 
             else:
                 e_bkg_sum = 0.
@@ -293,8 +263,6 @@ class RunPhot(object):
             osum = o_phot_table['aperture_sum_0'] - o_bkg_sum
             esum_err = (e_phot_table['aperture_sum_err_0']**2 + e_bkg_sum_err2)**0.5
             osum_err = (o_phot_table['aperture_sum_err_0']**2 + o_bkg_sum_err2)**0.5
-            #esum_err = (e_err_table['aperture_sum_0'])**0.5
-            #osum_err = (o_err_table['aperture_sum_0'])**0.5
 
             #Close the image. 
             h.close()
