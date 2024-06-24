@@ -76,7 +76,7 @@ class PolData(object):
                 self.file_names[ob_id][mjd][ichip] = list()
 
                 #List all the files matching the criteria. 
-                ls_output = subprocess.run("ls {}/*.{}.{}.{}.chip{}.*.fits".format(self.rim_folder, self.obj_id, mjd, self.bband, ichip), shell=True, capture_output=True)
+                ls_output = subprocess.run("ls {}/*.{}.{}.{}.chip{}.*.fits".format(self.rim_folder, re.sub(" ","_",self.obj_id), mjd, self.bband, ichip), shell=True, capture_output=True)
                 fnames = ls_output.stdout.decode('utf8').split()
 
                 #Save only the files that have the correct OB ID. 
