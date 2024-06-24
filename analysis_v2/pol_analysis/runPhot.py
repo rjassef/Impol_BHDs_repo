@@ -1,17 +1,21 @@
 import numpy as np 
 import re
 from pathlib import Path
+import matplotlib.pyplot as plt
+import warnings
 
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats, SigmaClip
+from astropy.convolution import convolve
+from astropy.modeling import models, fitting
+from astropy.visualization import ZScaleInterval, LinearStretch, ImageNormalize
+from astropy.utils.exceptions import AstropyWarning
 
 from photutils.detection import DAOStarFinder
 from photutils.centroids import centroid_sources, centroid_com
 from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry
 from photutils import Background2D, SExtractorBackground
 from photutils.segmentation import SourceFinder, SourceCatalog, make_2dgaussian_kernel
-from astropy.convolution import convolve
-
 
 class RunPhot(object):
 
@@ -80,8 +84,16 @@ class RunPhot(object):
 
                 if i==0:
                     epos = self.ebeam_dao_find(fname)
+                    if self.pdata.bband == "v_HIGH":
+                        epos = epos[epos[:,1]<500.]
+                    # if self.only_bhd:
+                    #     dist2 = (epos[:,0]-self.ex_bhd)**2 + (epos[:,1]-self.ey_bhd)**2
+                    #     k = np.argmin(dist2)
+                    #     epos = epos[k:k+2]
+                    #     print(epos)
+                    #     input()
                 else: 
-                    epos = self.dao_recenter(fname, self.e_pos_ref, "e", box_size)            
+                    epos = self.dao_recenter(fname, self.e_pos_ref, "e", box_size)           
                 np.savetxt("{0:s}/{1:s}".format(self.pdata.phot_folder, epos_fname), epos)
 
                 opos = self.dao_recenter(fname, epos, "o", box_size)
@@ -177,9 +189,9 @@ class RunPhot(object):
 
         return pos
     
-    def get_phot(self, r_ap=1.0, resubtract_background=False, force_new=False):
+    def get_phot(self, r_ap=1.0, resubtract_background=False, force_new=True, apply_convolution=False, ob_ids=None, mjds=None, chips=None):
 
-        for fname in self.pdata.list_of_filenames():
+        for ifname, fname in enumerate(self.pdata.list_of_filenames(ob_ids=ob_ids, mjds=mjds, chips=chips)):
 
             #Check if photometry has already been calculated.
             pname = re.sub(".fits",".phot",fname)
@@ -196,11 +208,22 @@ class RunPhot(object):
             #Load the masks. 
             mask, omask, emask = self.pdata.mask_obj.read_masks(fname)
 
-            # kernel = make_2dgaussian_kernel(2.0/pixscale, size=2*int(2.0/pixscale)-1)
-            # convolved_data = convolve(h[0].data, kernel, mask=mask)
-            # h[0].data = convolved_data
-            # convolved_err  = convolve(h[1].data**2, kernel, mask=mask)**0.5
-            # h[1].data = convolved_err
+            if apply_convolution:
+                target_seeing = np.ceil(np.max(self.seeing)*10)/10.
+                kernel_fwhm = (target_seeing**2-self.seeing[ifname]**2)**0.5/pixscale
+                #kernel_size = 2*int(kernel_fwhm)-1
+                kernel_size = 2*int(target_seeing/pixscale)-1
+                #print(target_seeing, self.seeing[ifname], kernel_fwhm, kernel_size)
+                kernel = make_2dgaussian_kernel(kernel_fwhm, size=kernel_size)
+                #kernel = make_2dgaussian_kernel(2.0/pixscale, size=2*int(2.0/pixscale)-1)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', AstropyWarning)
+                    convolved_data = convolve(h[0].data, kernel, mask=mask)
+                    convolved_err  = convolve(h[1].data**2, kernel, mask=mask)**0.5
+                h[0].data = convolved_data
+                h[1].data = convolved_err
+
+                h.writeto("{}/{}".format(self.pdata.bkg_folder, re.sub(".fits",".bkg_conv.fits",fname)), overwrite=True)
 
             #Load the e and o beam source positions. 
             epos = np.loadtxt("{}/{}".format(self.pdata.phot_folder, re.sub(".fits",".epos",fname)))
@@ -281,46 +304,65 @@ class RunPhot(object):
 
         return
 
-    # #Set the apertures and annuli to be used.
-    # r_ap_use     = r_ap/pix_scale
-    # r_an_in_use  = r_an_in/pix_scale
-    # r_an_out_use = r_an_out/pix_scale
-    # aps   = CircularAperture(pos, r=r_ap_use)
-    # anns  = CircularAnnulus(pos, r_in=r_an_in_use, r_out=r_an_out_use)
-    # #apers = [aps, anns]
 
-    # #Open the image.
-    # h = fits.open("{0:s}/{1:s}".format(data_folder, fname))
-    # h[1].data[mask]=0
+    def find_seeing(self, ex_ref0, ey_ref0, x_size=24, y_size=24, stddev_0 = 1.1, x_mean_0=None, y_mean_0=None, show_plots=False, ob_ids=None, mjds=None, chips=None):
 
-    # #Estimate the background and its error using a 3 sigma clipping.
-    # annulus_masks = anns.to_mask(method='center')
-    # bkg_mean = np.zeros(len(pos))
-    # bkg_sig  = np.zeros(len(pos))
-    # bkg_mean_err2 = np.zeros(len(pos))
-    # for k, ann_mask in enumerate(annulus_masks):
-    #     ann_data = ann_mask.multiply(h[0].data*np.where(mask,0,1))
-    #     ann_data_1d = ann_data[ann_data>0]
-    #     bkg_mean[k], bkg_median, bkg_sig[k] = sigma_clipped_stats(ann_data_1d)
+        im_fnames = self.pdata.list_of_filenames(ob_ids=ob_ids, mjds=mjds, chips=chips)
+        nf = len(im_fnames)
 
-    # #Calculate the photometry.
-    # phot_table = aperture_photometry(h[0].data, [aps], mask=mask)
-    # err_table  = aperture_photometry((h[1].data)**2, [aps], mask=mask)
+        self.seeing = np.zeros(nf)
 
-    # #Close the image.
-    # h.close()
+        for i in range(nf):
+            bkg_name = re.sub(".fits",".bkg.fits",im_fnames[i])
+            im = fits.open("{}/{}".format(self.pdata.bkg_folder, bkg_name))
 
-    # #Subtract the background.
-    # bkg_sum = bkg_mean * aps.area
-    # final_sum = phot_table['aperture_sum_0'] - bkg_sum
+            #Find the position of the closest object to the star choosen. 
+            epos = np.loadtxt("{}/{}".format(self.pdata.phot_folder, re.sub(".fits",".epos", im_fnames[i])))
+            dist2 = (epos[:,0]-ex_ref0)**2 + (epos[:,1]-ey_ref0)**2
+            k = np.argmin(dist2)
+            ex_ref, ey_ref = epos[k]
 
-    # #Get the uncertainty.
-    # bkg_sum_err2 = bkg_sig**2 * (aps.area)**2 / (anns.area)**2
-    # final_error = (err_table['aperture_sum_0'] + bkg_sum_err2)**0.5
-    # #final_error = (err_table['aperture_sum_0'])**0.5
+            ix1 = int(ex_ref-x_size/2)
+            ix2 = int(ex_ref+x_size/2)
+            iy1 = int(ey_ref-y_size/2)
+            iy2 = int(ey_ref+y_size/2)
+            y, x = np.mgrid[:x_size, :y_size]
+            z = im[0].data[iy1:iy2, ix1:ix2]
+            z[np.isnan(z)] = 0.
+            #z_err = im[1].data[iy1:iy2, ix1:ix2]
+            #z -= np.median(z)
 
-    # return final_sum, final_error
+            if x_mean_0 is None:
+                x_mean_0 = x_size/2
+            if y_mean_0 is None:
+                y_mean_0 = y_size/2
+            p_init = models.Gaussian2D(x_mean=x_mean_0, y_mean=y_mean_0, x_stddev=stddev_0[i], y_stddev=stddev_0[i], amplitude=np.max(z))#x_stddev=0.95, y_stddev=0.95)
+            stddev_tied = lambda model: model.x_stddev
 
+            p_init.y_stddev.tied = stddev_tied
+            p_init.x_mean.min = 0
+            p_init.x_mean.max = x_size
+            p_init.y_mean.min = 0
+            p_init.y_mean.max = y_size
+            p_init.x_stddev.min = 0.
+            p_init.x_stddev.max = 5.
+            p_init.y_stddev.min = 0.
+            p_init.y_stddev.max = 5.
+
+            fit_p = fitting.LevMarLSQFitter()
+            #fit_p = fitting.TRFLSQFitter()
+            p = fit_p(p_init, x, y, z)#, weights=1./z_err)
+            self.seeing[i] = np.mean([p.x_fwhm,p.y_fwhm])*im[0].header["HIERARCH ESO INS PIXSCALE"]*im[0].header["HIERARCH ESO DET WIN1 BINX"]
+            #print(p.x_fwhm, p.y_fwhm)
+
+            if show_plots:
+                norm = ImageNormalize(z, interval=ZScaleInterval(), stretch=LinearStretch())
+                fig, axs = plt.subplots(1,2)
+                axs[0].imshow(z, norm=norm, cmap='gray')
+                axs[1].imshow(p(x,y), norm=norm, cmap='gray')
+                plt.show()
+
+        return
 
 
 

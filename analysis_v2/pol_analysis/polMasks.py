@@ -18,11 +18,7 @@ class PolMasks(object):
             return
 
         #Start by checking whether the masks exist for each file. If they do not, create them.
-        for fname in pdata.list_of_filenames():
-        # for ob_id in pdata.file_names:
-        #     for mjd in pdata.file_names[ob_id]:
-        #         for ichip in pdata.file_names[ob_id][mjd]:
-        #             for k, fname in enumerate(pdata.file_names[ob_id][mjd][ichip]):
+        for i, fname in enumerate(pdata.list_of_filenames()):
 
             #Mask names.
             mname, omname, emname = self.get_mask_names(fname)
@@ -33,7 +29,10 @@ class PolMasks(object):
                 if not Path("{}/{}".format(pdata.mask_folder,mm)).exists():
                     missing_mask = True
             if pdata.force_new or missing_mask:
-                self.create_mask(fname)
+                fname_for_mask = None
+                if self.pdata.filenames_for_mask_creation is not None:
+                    fname_for_mask = self.pdata.filenames_for_mask_creation[i]
+                self.create_mask(fname, fname_for_mask)
 
         return
 
@@ -45,7 +44,7 @@ class PolMasks(object):
         return mname, omname, emname
 
     #Mask creation.
-    def create_mask(self, fname):
+    def create_mask(self, fname, fname_for_mask):
 
         #Get the chip number from the filename. 
         m = re.search("chip(.)", fname)
@@ -55,7 +54,10 @@ class PolMasks(object):
         mname, omname, emname = self.get_mask_names(fname)
 
         #open the file
-        h = fits.open("{0:s}/{1:s}".format(self.pdata.rim_folder, fname))
+        if fname_for_mask is None:
+            h = fits.open("{0:s}/{1:s}".format(self.pdata.rim_folder, fname))
+        else:
+            h = fits.open("{0:s}/{1:s}".format(self.pdata.rim_folder, fname_for_mask))
 
         #Create a mask with the same shape.
         mask = np.zeros(h[0].data.shape, dtype=bool)
@@ -143,7 +145,7 @@ class PolMasks(object):
         return 
 
     #Star masks.
-    def bright_star_mask(bsm, mask):
+    def bright_star_mask(self, bsm, mask):
 
         for bsm_i in bsm:
             ex, ey, dx, dy = bsm_i  

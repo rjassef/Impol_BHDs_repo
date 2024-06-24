@@ -13,7 +13,7 @@ from .polMasks import PolMasks
 
 class PolData(object):
 
-    def __init__(self, obj_id, bband, show_plots=False, use_skyflats=False, force_new=False, rim_folder=None, root=None, use_masks=True, crz_objlim=10):
+    def __init__(self, obj_id, bband, show_plots=False, use_skyflats=False, force_new=False, rim_folder=None, root=None, use_masks=True, crz_objlim=10, filenames_for_mask_creation=None):
 
         #Save the input parameters.
         for k,v in locals().items():
@@ -107,6 +107,7 @@ class PolData(object):
                     chips_use = chips
                 for chip in chips_use:
                     fname_list.extend(self.file_names[ob_id][mjd][chip])
+
         return fname_list
 
     def crz_clean(self):
@@ -116,10 +117,10 @@ class PolData(object):
 
             #Compute the CR corrected image if needed.
             crzname = re.sub(".fits",".crz.fits",fname)
-            if not Path("{}/{}".format(self.crz_folder, crzname)).exists():
+            if self.force_new or not Path("{}/{}".format(self.crz_folder, crzname)).exists():
                 print("Cleaning cosmic rays in ",fname)
                 h = fits.open("{0:s}/{1:s}".format(self.rim_folder, fname))
-                mask, emask, omask = self.mask_obj.read_masks(fname)
+                mask, omask, emask = self.mask_obj.read_masks(fname)
                 crmask, clean_im = detect_cosmics(h[0].data, inmask=mask, objlim=self.crz_objlim)
                 h[0].data = clean_im
                 h.writeto("{0:s}/{1:s}".format(self.crz_folder, crzname), overwrite=True)
@@ -129,8 +130,8 @@ class PolData(object):
                 mask = mask | crmask
                 emask = emask | crmask
                 omask = omask | crmask
-                fits.writeto("{0:s}/{1:s}".format(self.mask_folder,mname),  mask,overwrite=True)
-                fits.writeto("{0:s}/{1:s}".format(self.mask_folder,omname),  omask,overwrite=True)
-                fits.writeto("{0:s}/{1:s}".format(self.mask_folder,emname),  emask,overwrite=True)                
+                fits.writeto("{0:s}/{1:s}".format(self.mask_folder,mname),  mask.astype(int),overwrite=True)
+                fits.writeto("{0:s}/{1:s}".format(self.mask_folder,omname),  omask.astype(int),overwrite=True)
+                fits.writeto("{0:s}/{1:s}".format(self.mask_folder,emname),  emask.astype(int),overwrite=True)                
 
-        return crzname
+        return #crzname
