@@ -232,9 +232,11 @@ class ResolvedPol(object):
             fits.writeto(po_fname+".epfrac.fits" , self.stk.epol_frac * source_mask, overwrite=True)
             fits.writeto(po_fname+".pangle.fits" , self.stk.pol_angle * source_mask, overwrite=True)
             fits.writeto(po_fname+".epangle.fits", self.stk.epol_angle *source_mask, overwrite=True)
+            fits.writeto(po_fname+".Q.fits", self.stk.Q, overwrite=True)
+            fits.writeto(po_fname+".U.fits", self.stk.U, overwrite=True)
         return
 
-    def plot_pol(self, pmin=0., pmax=0.5, chimin=-90., chimax=90., ob_names=None, size=24, cmap_pfrac='hot_r', cmap_pangle='hsv', z=None, figsize=(17,16)):
+    def plot_pol(self, pmin=0., pmax=0.5, chimin=-90., chimax=90., ob_names=None, size=24, cmap_pfrac='hot_r', cmap_pangle='twilight', z=None, figsize=(17,16)):
 
         if ob_names is None:
             ob_names = list()
