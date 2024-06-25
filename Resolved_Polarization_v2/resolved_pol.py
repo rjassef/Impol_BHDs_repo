@@ -5,6 +5,9 @@ import re
 import warnings
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.patheffects as PathEffects
+import matplotlib
+matplotlib.rc('text.latex', preamble=r'\usepackage{amsmath}')
 
 import astropy.units as u
 from astropy.io import fits
@@ -40,6 +43,16 @@ class ResolvedPol(object):
 
         subprocess.call(["mkdir", self.stamps_folder])
         
+        if band=="R_SPECIAL":   
+            self.latex_band = r"${\boldsymbol{R_{\rm Special}}}$"
+        elif band=="I_BESS":
+            self.latex_band = r"${\boldsymbol{I_{\rm Bessel}}}$"
+        elif band=="v_HIGH":
+            self.latex_band = r"${\boldsymbol{v_{\rm High}}}$"
+        else:
+            print("Unrecognized band ",band)
+            return
+
         #Initialize the data object. 
         if self.root_folder is None:
             self.root_folder = os.getcwd()+"/../analysis_v2"
@@ -236,7 +249,7 @@ class ResolvedPol(object):
             fits.writeto(po_fname+".U.fits", self.stk.U, overwrite=True)
         return
 
-    def plot_pol(self, pmin=0., pmax=0.5, chimin=-90., chimax=90., ob_names=None, size=24, cmap_pfrac='hot_r', cmap_pangle='twilight', z=None, figsize=(17,16)):
+    def plot_pol(self, pmin=0., pmax=0.5, chimin=-90., chimax=90., ob_names=None, size=24, cmap_pfrac='hot_r', cmap_pangle='twilight', z=None, figsize=(17,16), save_fig=False):
 
         if ob_names is None:
             ob_names = list()
@@ -293,10 +306,19 @@ class ResolvedPol(object):
         for i, ob_name in enumerate(ob_names):
             x = ob_name.split(".")
             if len(x)==2:
-                axs[0,i].text(size*0.05, size*0.05, "OB : "+x[0], fontsize=28, weight='bold')
-                axs[0,i].text(size*0.05, size*0.15, "MJD: "+x[1], fontsize=28, weight='bold')
+                txt = axs[0,i].text(size*0.025, size*0.05, "OB : "+x[0], fontsize=28, weight='bold', color='white')
+                txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
+                txt = axs[0,i].text(size*0.025, size*0.15, "MJD: "+x[1], fontsize=28, weight='bold', color='white')
+                txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
+                if i==0:
+                    txt = axs[0,i].text(size*0.025, size*0.25, self.latex_band, fontsize=36, color='white')
+                    txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
             else:
-                axs[0,i].text(size*0.05, size*0.05, ob_name, fontsize=28, weight='bold')
+                ob_name_use = ob_name
+                if ob_name=="All":
+                    ob_name_use = "Combined"
+                txt = axs[0,i].text(size*0.05, size*0.05, ob_name_use, fontsize=28, weight='bold', color='white')
+                txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
                 
         if z is not None:
             from astropy.cosmology import FlatLambdaCDM
@@ -312,3 +334,6 @@ class ResolvedPol(object):
 
         fig.tight_layout()
         plt.show()
+
+        if save_fig:
+            fig.savefig("{}.{}.2Dpol.png".format(self.object, self.band), dpi=200)
