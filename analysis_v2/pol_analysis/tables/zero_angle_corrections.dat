@@ -1,0 +1,4 @@
+#Taken from the FORS2 User Manual for P114.
+v_HIGH      +1.80
+R_SPECIAL   -1.19
+I_BESS      -2.89

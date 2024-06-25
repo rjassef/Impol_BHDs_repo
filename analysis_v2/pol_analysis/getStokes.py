@@ -12,6 +12,16 @@ class GetStokes(object):
         #Save the input.
         self.pdata = pdata
 
+        #Load the zero angle corrections. 
+        self.zero_angle_corrections = dict()
+        cat = open("{}/tables/zero_angle_corrections.dat".format(os.path.dirname(os.path.realpath(__file__))))
+        for line in cat:
+            if line[0]=="#":
+                continue
+            x = line.split()
+            self.zero_angle_corrections[x[0]] = float(x[1])
+        cat.close()
+
         return
     
     def load_fluxes(self, ob_ids, mjds, chips):
@@ -102,7 +112,8 @@ class GetStokes(object):
         self.pol_angle = 0.5*np.arctan2(U,Q)*180./np.pi
 
         #Now, we need to correct for the zero polarization angle, using Table 4.7 from the FORS2 manual. For R-band, the correction is -1.19 degrees.
-        self.pol_angle += 1.19
+        #self.pol_angle += 1.19
+        self.pol_angle -= self.zero_angle_corrections[self.pdata.bband]
 
         self.pol_angle = np.where(self.pol_angle<0, 180.+self.pol_angle, self.pol_angle)
 
@@ -115,7 +126,18 @@ class GetStokes(object):
 
         return 
     
-    def QU_background(self, x, y, STK_Par, chip, filter="R-band"):
+    def QU_background(self, x, y, STK_Par, chip):#, filter="R-band"):
+
+        #Assign the correct filter in the table to the FORS2 name of the filter. 
+        if self.pdata.bband=="R_SPECIAL":
+            filter="R-band"
+        elif self.pdata.bband=="I_BESS":
+            filter="I-band"
+        elif self.pdata.bband=="v_HIGH":
+            filter="V-band"
+        else:
+            print("Unrecognized filter {} for QU corrections.".format(self.pdata.band))
+            return np.zeros(x.shape)
 
         #Read the corefficients table.
         coeffs = Table.read("{}/tables/{}_Correction_Coefficients.dat".format(os.path.dirname(os.path.realpath(__file__)), STK_Par), format='ascii')
