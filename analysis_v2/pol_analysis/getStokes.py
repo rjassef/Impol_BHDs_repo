@@ -4,6 +4,7 @@ import os
 
 from astropy.io import fits
 from astropy.table import Table
+from astropy.stats import sigma_clipped_stats
 
 class GetStokes(object):
 
@@ -119,8 +120,12 @@ class GetStokes(object):
 
         Q_resamp -= Q_back
         U_resamp -= U_back
-        self.epol_frac = np.std((Q_resamp**2+U_resamp**2)**0.5, axis=0)
-        self.epol_angle = np.std(0.5*np.arctan2(U_resamp,Q_resamp)*180./np.pi, axis=0)
+        #self.epol_frac = np.std((Q_resamp**2+U_resamp**2)**0.5, axis=0)
+        #self.epol_angle = np.std(0.5*np.arctan2(U_resamp,Q_resamp)*180./np.pi, axis=0)
+        pol_frac_resamp = (Q_resamp**2+U_resamp**2)**0.5
+        pol_angle_resamp = 0.5*np.arctan2(U_resamp,Q_resamp)*180./np.pi
+        _, _, self.epol_frac  = sigma_clipped_stats(pol_frac_resamp, sigma=3.0, axis=0)
+        _, _, self.epol_angle = sigma_clipped_stats(pol_angle_resamp, sigma=3.0, axis=0)
         self.dQ = np.std(Q_resamp, axis=0)
         self.dU = np.std(U_resamp, axis=0)
 

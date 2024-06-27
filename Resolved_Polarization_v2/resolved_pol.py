@@ -123,7 +123,7 @@ class ResolvedPol(object):
 
         return     
 
-    def get_pol(self, regularize_PSF=True, special_ob_pairs=None, align_images=True, no_processing=False):
+    def get_pol(self, regularize_PSF=True, special_ob_pairs=None, align_images=True, no_processing=False, common_seeing_all_obs=True):
 
         #Do this for each OB/MJD pair, and then do it for all combined and for all special ob_pairs requested. 
         ob_combs = list()
@@ -142,6 +142,12 @@ class ResolvedPol(object):
                 ob_comb_names.append("sp{}".format(iob+1))
 
         self.target_seeing = dict()
+        if common_seeing_all_obs:
+            fnames = self.pdata.list_of_filenames()
+            seeing_use = np.zeros(len(fnames))
+            for i, fname in enumerate(fnames):
+                seeing_use[i] = self.seeing[fname]
+            common_target_seeing = np.ceil(np.max(seeing_use)*10 + 1)/10.
 
         #Run through all the combinations. 
         for iob, ob_comb in enumerate(ob_combs):
@@ -149,10 +155,13 @@ class ResolvedPol(object):
             #Get the file names. 
             fnames = self.pdata.list_of_filenames(ob_ids=ob_comb[0], mjds=ob_comb[1])
 
-            seeing_use = np.zeros(len(fnames))
-            for i, fname in enumerate(fnames):
-                seeing_use[i] = self.seeing[fname]
-            target_seeing = np.ceil(np.max(seeing_use)*10)/10.
+            if common_seeing_all_obs:
+                target_seeing = common_target_seeing
+            else:
+                seeing_use = np.zeros(len(fnames))
+                for i, fname in enumerate(fnames):
+                    seeing_use[i] = self.seeing[fname]
+                target_seeing = np.ceil(np.max(seeing_use)*10)/10.
             self.target_seeing[ob_comb_names[iob]] = target_seeing
             if no_processing:
                 continue
@@ -211,9 +220,13 @@ class ResolvedPol(object):
                     input_wcs.wcs.cdelt = 1., 1.
 
                     oim, _     = reproject_interp((oim    , input_wcs), output_wcs_o, shape_out=oim.shape, order='bicubic') 
-                    oim_err, _ = reproject_interp((oim_err, input_wcs), output_wcs_o, shape_out=oim.shape, order='bicubic') 
+                    oim_err, _ = reproject_interp((oim_err**2, input_wcs), output_wcs_o, shape_out=oim.shape, order='bicubic')
+                    oim_err[oim_err<0.] = 0.
+                    oim_err = oim_err**0.5 
                     eim, _     = reproject_interp((eim    , input_wcs), output_wcs_e, shape_out=oim.shape, order='bicubic')
-                    eim_err, _ = reproject_interp((eim_err, input_wcs), output_wcs_e, shape_out=oim.shape, order='bicubic') 
+                    eim_err, _ = reproject_interp((eim_err**2, input_wcs), output_wcs_e, shape_out=oim.shape, order='bicubic')
+                    eim_err[eim_err<0.] = 0.
+                    eim_err = eim_err**0.5 
 
                 #Finally, load the cutouts. 
                 self.stk.esum[fname] = eim[self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z]
@@ -237,7 +250,7 @@ class ResolvedPol(object):
                 stack += self.stk.esum[fname]
             _, _, rms = sigma_clipped_stats(stack, sigma=3.0)
             source_mask = np.ones(stack.shape)
-            source_mask[stack<3.0*rms] = np.nan          
+            #source_mask[stack<3.0*rms] = np.nan          
 
             po_fname = "{}/{}.{}.{}".format(self.stamps_folder, self.object, self.band, ob_comb_names[iob])
             fits.writeto(po_fname+".stack.fits"  , stack, overwrite=True)
@@ -249,11 +262,11 @@ class ResolvedPol(object):
             fits.writeto(po_fname+".U.fits", self.stk.U, overwrite=True)
         return
 
-    def plot_pol(self, pmin=0., pmax=0.5, chimin=-90., chimax=90., ob_names=None, size=24, cmap_pfrac='hot_r', cmap_pangle='twilight', z=None, figsize=(17,16), save_fig=False):
+    def plot_pol(self, pmin=0., pmax=50., chimin=-90., chimax=90., ob_names=None, size=20, cmap_pfrac='plasma_r', cmap_pangle='hsv', z=None, figsize=(17,16), save_fig=False):
 
         if ob_names is None:
             ob_names = list()
-            for ob_pair in self.pdata.ob_pairs:
+            for ob_pair in sorted(self.pdata.ob_pairs, key=lambda l:l[1]):
                 ob_names.append("{}.{}".format(ob_pair[0], ob_pair[1]))
             if len(ob_names)>1:
                 ob_names.append("All")
@@ -271,10 +284,29 @@ class ResolvedPol(object):
         stacks = list()
         pfracs = list()
         pangles = list()
+        epfracs = list()
+        epangles = list()
         for ob_name in ob_names:
             stacks.append(fits.getdata(po_fname+ob_name+".stack.fits"))
-            pfracs.append(fits.getdata(po_fname+ob_name+".pfrac.fits"))
+            pfracs.append(fits.getdata(po_fname+ob_name+".pfrac.fits")*100)
             pangles.append(fits.getdata(po_fname+ob_name+".pangle.fits"))
+            epfracs.append(fits.getdata(po_fname+ob_name+".epfrac.fits")*100)
+            epangles.append(fits.getdata(po_fname+ob_name+".epangle.fits"))
+        
+        #Apply masking based on the error images. 
+        for i in range(len(ob_names)):
+            # pmask = np.where(pfracs[i]>epfracs[i], False, True)
+            # _, _, rms = sigma_clipped_stats(stacks[i], sigma=3.0)
+            # print(rms)
+            # pmask[stacks[i]<3.0*rms] = True
+            _, _, rms = sigma_clipped_stats(stacks[i], sigma=3.0)
+            pmask = np.where(stacks[i]<3.0*rms, True, False)
+            #stacks[i][pmask]   = np.nan
+            pmask[pfracs[i]<epfracs[i]] = True
+            pfracs[i][pmask]   = np.nan
+            epfracs[i][pmask]  = np.nan
+            pangles[i][pmask]  = np.nan
+            epangles[i][pmask] = np.nan
 
         ix1 = int(stacks[0].shape[1]/2 - size/2)
         ix2 = int(stacks[0].shape[1]/2 + size/2)
@@ -283,8 +315,8 @@ class ResolvedPol(object):
         #print(ix1, ix2, iy1, iy2)
 
         for i, stack in enumerate(stacks):
-            norm = ImageNormalize(stack, stretch=LinearStretch(), interval=ZScaleInterval())
-            axs[0,i].imshow(stack[iy1:iy2:-1,ix1:ix2], norm=norm, cmap='gray')
+            norm = ImageNormalize(stack[iy1:iy2:-1,ix1:ix2], stretch=LinearStretch(), interval=ZScaleInterval())
+            axs[0,i].imshow(stack[iy1:iy2:-1,ix1:ix2], norm=norm, cmap='gray_r')
 
         for i, pfrac in enumerate(pfracs):
             cm_pf = axs[1,i].imshow(pfrac[iy1:iy2:-1,ix1:ix2], cmap=cmap_pfrac, vmin=pmin, vmax=pmax)
