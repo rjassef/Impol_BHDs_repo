@@ -5,6 +5,7 @@ log.txt
 *.epos
 *.opos
 *.phot
+BHDs_2D_getpol.ipynb
 
 #Ignore mac specific files. 
 .DS_Store
