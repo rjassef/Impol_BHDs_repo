@@ -155,11 +155,12 @@ class ResolvedPol(object):
         #Run through all the combinations. 
         for iob, ob_comb in enumerate(ob_combs):
 
-            print()
-            print("#######")
-            print(ob_comb_names[iob])
-            print("#######")
-            print()
+            if not no_processing:
+                print()
+                print("#######")
+                print(ob_comb_names[iob])
+                print("#######")
+                print()
 
             #Get the file names. 
             fnames = self.pdata.list_of_filenames(ob_ids=ob_comb[0], mjds=ob_comb[1])
@@ -329,7 +330,7 @@ class ResolvedPol(object):
 
         return 
 
-    def plot_pol(self, pmin=0., pmax=50., chimin=-90., chimax=90., ob_names=None, size=20, cmap_pfrac='plasma_r', cmap_pangle='hsv', z=None, figsize=(17,16), save_fig=False, snr_stack_lim=6.0):
+    def plot_pol(self, pmin=0., pmax=50., chimin=-90., chimax=90., ob_names=None, size=20, cmap_pfrac='plasma_r', cmap_pangle='hsv', z=None, figsize=(23,22), save_fig=False, snr_stack_lim=6.0, side_colorbar=False):
 
         if ob_names is None:
             ob_names = list()
@@ -387,17 +388,29 @@ class ResolvedPol(object):
 
         for i, pfrac in enumerate(pfracs):
             cm_pf = axs[1,i].imshow(pfrac[iy1:iy2:-1,ix1:ix2], cmap=cmap_pfrac, vmin=pmin, vmax=pmax)
-        divider_pf = make_axes_locatable(axs[1,-1])
-        #cax_pf = divider_pf.append_axes("right", size="5%", pad=0.05)
-        cax_pf = inset_axes(axs[1,2], width="5%", height="97%", loc=4) 
-        fig.colorbar(cm_pf, cax=cax_pf)
+        if side_colorbar:
+            #divider_pf = make_axes_locatable(axs[1,-1])
+            #cax_pf = divider_pf.append_axes("right", size="5%", pad=0.05)
+            cax_pf = inset_axes(axs[1,-1], width="5%", height="100%", loc='center right') 
+            cbar = fig.colorbar(cm_pf, cax=cax_pf, orientation='vertical')
+        else:
+            cax_pf = inset_axes(axs[1,-1], width="100%", height="5%", loc='upper center') 
+            cbar = fig.colorbar(cm_pf, cax=cax_pf, orientation='horizontal')
+        cbar.ax.tick_params(labelsize=20)
+        cbar.set_label(label=r'$P (\%)$', fontsize=28, weight='bold')
 
         for i, pangle in enumerate(pangles):
             cm_pa = axs[2,i].imshow(pangle[iy1:iy2:-1,ix1:ix2], cmap=cmap_pangle, vmin=chimin, vmax=chimax)
-        divider_pa = make_axes_locatable(axs[2,-1])
-        #cax_pa = divider_pa.append_axes("right", size="5%", pad=0.05)
-        cax_pa = inset_axes(axs[2,2], width="5%", height="97%", loc=4) 
-        fig.colorbar(cm_pa, cax=cax_pa)
+        if side_colorbar:
+            #divider_pa = make_axes_locatable(axs[2,-1])
+            #cax_pa = divider_pa.append_axes("right", size="5%", pad=0.05)
+            cax_pa = inset_axes(axs[2,-1], width="5%", height="100%", loc='center right')
+            cbar = fig.colorbar(cm_pa, cax=cax_pa, orientation='vertical')
+        else:
+            cax_pa = inset_axes(axs[2,-1], width="100%", height="5%", loc='upper center') 
+            cbar = fig.colorbar(cm_pa, cax=cax_pa, orientation='horizontal')
+        cbar.ax.tick_params(labelsize=20)
+        cbar.set_label(label=r'$\chi (\rm deg)$', fontsize=28, weight='bold')
 
         for j in range(3):
             for i in range(len(ob_names)):
@@ -407,20 +420,26 @@ class ResolvedPol(object):
         for i, ob_name in enumerate(ob_names):
             x = ob_name.split(".")
             if len(x)==2:
-                txt = axs[0,i].text(size*0.025, size*0.05, "OB : "+x[0], fontsize=28, weight='bold', color='white')
+                txt = axs[0,i].text(0.025, 0.90, "OB : "+x[0], fontsize=34, weight='bold', color='white', transform=axs[0,i].transAxes)
                 txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
-                txt = axs[0,i].text(size*0.025, size*0.15, "MJD: "+x[1], fontsize=28, weight='bold', color='white')
+                txt = axs[0,i].text(0.025, 0.80, "MJD: "+x[1], fontsize=34, weight='bold', color='white', transform=axs[0,i].transAxes)
                 txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
                 if i==0:
-                    txt = axs[0,i].text(size*0.025, size*0.25, self.latex_band, fontsize=36, color='white')
+                    txt = axs[0,i].text(0.025, 0.70, self.latex_band, fontsize=38, color='white', transform=axs[0,i].transAxes)
                     txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
             else:
                 ob_name_use = ob_name
                 if ob_name=="All":
                     ob_name_use = "Combined"
-                txt = axs[0,i].text(size*0.05, size*0.05, ob_name_use, fontsize=28, weight='bold', color='white')
+                txt = axs[0,i].text(size*0.05, size*0.05, ob_name_use, fontsize=34, weight='bold', color='white')
                 txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
-                
+
+            txt = axs[1,0].text(0.025, 0.90, 'Polarization Fraction', weight='bold', fontsize=34, color='white', transform=axs[1,0].transAxes)
+            txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
+
+            txt = axs[2,0].text(0.025, 0.90, 'Polarization Angle', weight='bold', fontsize=34, color='white', transform=axs[2,0].transAxes)
+            txt.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='black')])
+
         if z is not None:
             from astropy.cosmology import FlatLambdaCDM
             import astropy.units as u
@@ -432,8 +451,8 @@ class ResolvedPol(object):
                     if j>0:
                         bar_size = (10*u.kpc/cosmo.angular_diameter_distance(z))*u.rad
                         bar_size_pix = bar_size.to(u.arcsec).value / self.pixscale
-                        axs[j,i].errorbar([size*0.8],[size*0.9],xerr=[bar_size_pix/2.], fmt='none', capsize=10.0)
-                        axs[j,i].text(size*0.8,size*0.9,"10 kpc",ha='center',va='bottom', fontsize=14)
+                        axs[j,i].errorbar([size*0.75],[size*0.9],xerr=[bar_size_pix/2.], fmt='none', capsize=10.0)
+                        axs[j,i].text(size*0.75,size*0.9,"10 kpc",ha='center',va='bottom', fontsize=26)
 
         fig.tight_layout()
         plt.show()
