@@ -8,6 +8,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.patheffects as PathEffects
 import matplotlib
 matplotlib.rc('text.latex', preamble=r'\usepackage{amsmath}')
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import astropy.units as u
 from astropy.io import fits
@@ -78,10 +79,10 @@ class ResolvedPol(object):
                 self.seeing[fname] = self.pphot.seeing[i]
 
         #Zoom in region around the target. 
-        self.ix1_z =   30# 25
-        self.ix2_z =  110
-        self.iy1_z =  960
-        self.iy2_z = 1080
+        self.iy1_z =   30# 25
+        self.iy2_z =  110
+        self.ix1_z =  960
+        self.ix2_z = 1080
 
         #Get the offsets of the positions. 
         self.find_shift()
@@ -154,6 +155,12 @@ class ResolvedPol(object):
         #Run through all the combinations. 
         for iob, ob_comb in enumerate(ob_combs):
 
+            print()
+            print("#######")
+            print(ob_comb_names[iob])
+            print("#######")
+            print()
+
             #Get the file names. 
             fnames = self.pdata.list_of_filenames(ob_ids=ob_comb[0], mjds=ob_comb[1])
 
@@ -164,6 +171,7 @@ class ResolvedPol(object):
             self.target_seeing[ob_comb_names[iob]] = self.seeing[worse_psf_fname]
             if no_processing:
                 continue
+            print("Matching to image {}.".format(worse_psf_fname))
 
             self.stk.esum = dict()
             self.stk.osum = dict()
@@ -195,7 +203,10 @@ class ResolvedPol(object):
                 if fname!=worse_psf_fname:
                     fits.writeto("work/t.fits", h[0].data[40:900,300:1700], overwrite=True)
     
-                    subprocess.call("ImageMatch -v -preserve -cfg sample.cfg -m work/t.fits work/im.fits", shell=True, executable='/bin/zsh')
+                    subprocess.call("ImageMatch -v -preserve -cfg sample.cfg -m work/t.fits work/im.fits", shell=True, executable='/bin/zsh', stdout=subprocess.DEVNULL)
+
+                    #Plot the original, convolved and difference images.
+                    self.plot_imagematch(fname=fname)
 
                     hh = fits.open("work/imtemp.fits")
                     h[0].data[40:900,300:1700] = hh[0].data
@@ -228,10 +239,10 @@ class ResolvedPol(object):
                     eim_err = eim_err**0.5 
 
                 #Finally, load the cutouts. 
-                self.stk.esum[fname] = eim[self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z]
-                self.stk.osum[fname] = oim[self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z]
-                self.stk.eerr[fname] = eim_err[self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z]
-                self.stk.oerr[fname] = oim_err[self.ix1_z:self.ix2_z,self.iy1_z:self.iy2_z]
+                self.stk.esum[fname] = eim[self.iy1_z:self.iy2_z, self.ix1_z:self.ix2_z]
+                self.stk.osum[fname] = oim[self.iy1_z:self.iy2_z, self.ix1_z:self.ix2_z]
+                self.stk.eerr[fname] = eim_err[self.iy1_z:self.iy2_z, self.ix1_z:self.ix2_z]
+                self.stk.oerr[fname] = oim_err[self.iy1_z:self.iy2_z, self.ix1_z:self.ix2_z]
 
                 #Save the stamps of the cutouts.
                 fits.writeto("{}/{}".format(self.stamps_folder, re.sub(".fits",".eim.cutout.fits", fname)), self.stk.esum[fname], overwrite=True)
@@ -261,7 +272,64 @@ class ResolvedPol(object):
             fits.writeto(po_fname+".U.fits", self.stk.U, overwrite=True)
         return
 
-    def plot_pol(self, pmin=0., pmax=50., chimin=-90., chimax=90., ob_names=None, size=20, cmap_pfrac='plasma_r', cmap_pangle='hsv', z=None, figsize=(17,16), save_fig=False):
+    def plot_imagematch(self, fname):
+
+        original = fits.getdata("work/t.fits")
+        blurred  = fits.getdata("work/imtemp.fits")
+        target   = fits.getdata("work/im.fits")
+        diff     = target-blurred
+
+        #BHD
+        #e image
+        iy1_be = 0  #self.ix1_z-40
+        iy2_be = 70 #self.ix2_z-40
+        ix1_be = 685 #self.iy1_z-300
+        ix2_be = 755 #self.iy2_z-300
+
+        #Star used for seeing. 
+        iy1_se = int(self.star_coords[1]) - 35 - 40
+        iy2_se = int(self.star_coords[1]) + 35 - 40
+        ix1_se = int(self.star_coords[0]) - 35 - 300
+        ix2_se = int(self.star_coords[0]) + 35 - 300
+
+
+        fig, axs = plt.subplots(4, 3, figsize=(24,35))
+        for ax in axs.flatten():
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+        for i in range(axs.shape[0]):
+
+            if i<2:
+                iy1, iy2, ix1, ix2 = (iy1_be, iy2_be, ix1_be, ix2_be)
+                obj = "BHD"
+            else:
+                iy1, iy2, ix1, ix2 = (iy1_se, iy2_se, ix1_se, ix2_se)
+                obj = "Star"
+            beam = "e-beam"
+            if i==1 or i==3:
+                beam = "o-beam"
+                iy1 -= int(self.dy_use)
+                iy2 -= int(self.dy_use)
+
+            norm_ims = ImageNormalize(original[iy1:iy2, ix1:ix2], stretch=LinearStretch(), interval=ZScaleInterval())
+            norm_diff = ImageNormalize(diff[iy1:iy2, ix1:ix2], stretch=LinearStretch(), interval=ZScaleInterval())
+            axs[i,0].imshow(original[iy1:iy2, ix1:ix2], norm=norm_ims, cmap='gray')
+            axs[i,1].imshow(blurred[iy1:iy2, ix1:ix2], norm=norm_ims, cmap='gray')
+            axs[i,2].imshow(diff[iy1:iy2, ix1:ix2], norm=norm_ims, cmap='gray')
+
+            axs[i,0].text(0.1, 0.9, obj , fontsize=36, weight='bold', color='white', transform=axs[i,0].transAxes)
+            axs[i,0].text(0.1, 0.8, beam, fontsize=32, weight='bold', color='white', transform=axs[i,0].transAxes)
+                
+
+        fig.suptitle(fname, fontsize=36, weight='bold')
+
+        plt.tight_layout()
+        plt.show()
+
+        return 
+
+    def plot_pol(self, pmin=0., pmax=50., chimin=-90., chimax=90., ob_names=None, size=20, cmap_pfrac='plasma_r', cmap_pangle='hsv', z=None, figsize=(17,16), save_fig=False, snr_stack_lim=6.0):
 
         if ob_names is None:
             ob_names = list()
@@ -299,7 +367,7 @@ class ResolvedPol(object):
             # print(rms)
             # pmask[stacks[i]<3.0*rms] = True
             _, _, rms = sigma_clipped_stats(stacks[i], sigma=3.0)
-            pmask = np.where(stacks[i]<6.0*rms, True, False)
+            pmask = np.where(stacks[i]<snr_stack_lim*rms, True, False)
             #stacks[i][pmask]   = np.nan
             #pmask[pfracs[i]<epfracs[i]] = True
             pfracs[i][pmask]   = np.nan
@@ -320,13 +388,15 @@ class ResolvedPol(object):
         for i, pfrac in enumerate(pfracs):
             cm_pf = axs[1,i].imshow(pfrac[iy1:iy2:-1,ix1:ix2], cmap=cmap_pfrac, vmin=pmin, vmax=pmax)
         divider_pf = make_axes_locatable(axs[1,-1])
-        cax_pf = divider_pf.append_axes("right", size="5%", pad=0.05)
+        #cax_pf = divider_pf.append_axes("right", size="5%", pad=0.05)
+        cax_pf = inset_axes(axs[1,2], width="5%", height="97%", loc=4) 
         fig.colorbar(cm_pf, cax=cax_pf)
 
         for i, pangle in enumerate(pangles):
             cm_pa = axs[2,i].imshow(pangle[iy1:iy2:-1,ix1:ix2], cmap=cmap_pangle, vmin=chimin, vmax=chimax)
         divider_pa = make_axes_locatable(axs[2,-1])
-        cax_pa = divider_pa.append_axes("right", size="5%", pad=0.05)
+        #cax_pa = divider_pa.append_axes("right", size="5%", pad=0.05)
+        cax_pa = inset_axes(axs[2,2], width="5%", height="97%", loc=4) 
         fig.colorbar(cm_pa, cax=cax_pa)
 
         for j in range(3):
@@ -357,6 +427,8 @@ class ResolvedPol(object):
             cosmo = FlatLambdaCDM(H0=70., Om0 = 0.3)
             for j in range(1,3):
                 for i in range(len(ob_names)):
+                    if i==2:
+                        continue
                     if j>0:
                         bar_size = (10*u.kpc/cosmo.angular_diameter_distance(z))*u.rad
                         bar_size_pix = bar_size.to(u.arcsec).value / self.pixscale
