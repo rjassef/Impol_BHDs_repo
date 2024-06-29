@@ -16,6 +16,8 @@ from photutils.centroids import centroid_sources, centroid_com
 from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry
 from photutils import Background2D, SExtractorBackground
 from photutils.segmentation import SourceFinder, SourceCatalog, make_2dgaussian_kernel
+from photutils.segmentation import detect_threshold, detect_sources
+from photutils.utils import circular_footprint
 
 class RunPhot(object):
 
@@ -48,13 +50,20 @@ class RunPhot(object):
             #Open the CRZ image.
             h = fits.open("{}/{}".format(self.pdata.crz_folder, re.sub(".fits",".crz.fits",fname)))
 
+            # #Create a mask of the sources. Done following https://photutils.readthedocs.io/en/stable/background.html
+            # sigma_clip = SigmaClip(sigma=3.0, maxiters=10)
+            # threshold = detect_threshold(h[0].data, nsigma=2.0, sigma_clip=sigma_clip)
+            # segment_img = detect_sources(h[0].data, threshold, npixels=10)
+            # footprint = circular_footprint(radius=10)
+            # source_mask = segment_img.make_source_mask(footprint=footprint)
+
             #Create the background and sigmaclip objects.
             sigma_clip = SigmaClip(sigma=3.0)
             bkg_estimator = SExtractorBackground(sigma_clip)
 
             #First subtract the background for the e-beam, and then repeat for the o-beam. 
-            ebkg = Background2D(h[0].data, box_size , filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=emask.astype(bool))
-            obkg = Background2D(h[0].data, box_size, filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=omask.astype(bool))
+            ebkg = Background2D(h[0].data, box_size , filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=emask.astype(bool), mask=source_mask)
+            obkg = Background2D(h[0].data, box_size, filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=omask.astype(bool), mask=source_mask)
             h[0].data -= ebkg.background*(1-emask) + obkg.background*(1-omask)
             h[0].data[mask] = np.nan
 
