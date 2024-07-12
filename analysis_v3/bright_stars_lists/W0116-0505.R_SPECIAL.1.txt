@@ -1,0 +1,10 @@
+#Mask the three saturated stars.
+#Star on the center.
+1232 408 50 40
+#Star on the NE
+ 418 600 50 40
+#Star on the center top.
+ 890 640 30 30
+#Star cut by mask
+ 245 291 20 20
+ 
