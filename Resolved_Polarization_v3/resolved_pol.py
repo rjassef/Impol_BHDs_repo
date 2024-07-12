@@ -127,7 +127,7 @@ class ResolvedPol(object):
 
         return     
 
-    def get_pol(self, regularize_PSF=True, special_ob_pairs=None, align_images=True, no_processing=False, common_seeing_all_obs=True):
+    def get_pol(self, regularize_PSF=True, special_ob_pairs=None, align_images=True, no_processing=False, common_seeing_all_obs=True, show_diagnostics=True, blurr_PSF_FWHM=None):
 
         #Do this for each OB/MJD pair, and then do it for all combined and for all special ob_pairs requested. 
         ob_combs = list()
@@ -207,10 +207,24 @@ class ResolvedPol(object):
                     subprocess.call("ImageMatch -v -preserve -cfg sample.cfg -m work/t.fits work/im.fits", shell=True, executable='/bin/zsh', stdout=subprocess.DEVNULL)
 
                     #Plot the original, convolved and difference images.
-                    self.plot_imagematch(fname=fname)
+                    if show_diagnostics:
+                        self.plot_imagematch(fname=fname)
 
                     hh = fits.open("work/imtemp.fits")
                     h[0].data[40:900,300:1700] = hh[0].data
+
+                #Apply additional blurring if requested.
+                if blurr_PSF_FWHM is not None:
+                    kernel_fwhm = blurr_PSF_FWHM/self.pixscale
+                    kernel_size = 2*int(blurr_PSF_FWHM/self.pixscale)-1
+                    kernel = make_2dgaussian_kernel(kernel_fwhm, size=kernel_size)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore', AstropyWarning)
+                        convolved_data = convolve(h[0].data, kernel, mask=mask)
+                        convolved_err  = convolve(h[1].data**2, kernel, mask=mask)**0.5
+                    h[0].data = convolved_data
+                    h[1].data = convolved_err
+
 
                 #Separate the e and o beam images.
                 oim     = h[0].data*(1-omask.astype(int))
@@ -330,7 +344,7 @@ class ResolvedPol(object):
 
         return 
 
-    def plot_pol(self, pmin=0., pmax=50., chimin=-90., chimax=90., ob_names=None, size=20, cmap_pfrac='plasma_r', cmap_pangle='hsv', z=None, figsize=(23,22), save_fig=False, snr_stack_lim=6.0, side_colorbar=False):
+    def plot_pol(self, pmin=0., pmax=50., chimin=-90., chimax=90., ob_names=None, size=20, cmap_pfrac='plasma_r', cmap_pangle='hsv', z=None, figsize=(23,22), save_fig=False, fig_fname=None, snr_stack_lim=6.0, side_colorbar=False, blurr_PSF_FWHM=None):
 
         if ob_names is None:
             ob_names = list()
@@ -414,7 +428,10 @@ class ResolvedPol(object):
 
         for j in range(3):
             for i in range(len(ob_names)):
-                beam  = plt.Circle((size*0.15,size*0.8),self.target_seeing[ob_names[i]]/2/self.pixscale, color='k', fill=False)
+                seeing = self.target_seeing[ob_names[i]]
+                if blurr_PSF_FWHM is not None:
+                    seeing = (seeing**2 + blurr_PSF_FWHM**2)**0.5
+                beam  = plt.Circle((size*0.15,size*0.8),seeing/2/self.pixscale, color='k', fill=False)
                 axs[j,i].add_patch(beam)
 
         for i, ob_name in enumerate(ob_names):
@@ -458,4 +475,9 @@ class ResolvedPol(object):
         plt.show()
 
         if save_fig:
-            fig.savefig("{}.{}.2Dpol.png".format(self.object, self.band), dpi=200)
+            if fig_fname is None:
+                if blurr_PSF_FWHM is None:
+                    fig_fname = "{}.{}.2Dpol.png".format(self.object, self.band)
+                else:
+                    fig_fname = "{}.{}.2Dpol.blurred_{:.1f}.png".format(self.object, self.band, blurr_PSF_FWHM)
+            fig.savefig(fig_fname, dpi=200)
