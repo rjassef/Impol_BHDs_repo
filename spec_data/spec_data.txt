@@ -1,0 +1,5 @@
+W0019-1046  DBSP    w0019m1046_b.f.fits         blue=True
+W0116-0505  SDSS    spec-7046-56568-0425.fits
+W0204-0506  GMOS    W0204m0506.f.fits           inst_conf={"grating":"B600","detector":"EEV","slit_width":1.5}
+W0220+0137  SDSS    spec-4267-55484-0056.fits
+W0831+0140  GMOS    W0831p0140.f.fits           inst_conf={"grating":"B600","detector":"EEV","slit_width":1.5}
