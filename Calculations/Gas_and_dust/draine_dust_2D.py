@@ -28,14 +28,20 @@ class draine_dust(object):
 
         wave_pfrac, theta_S_pfrac, pfrac = self.read_file(p_fname)
         cos_th_S_pfrac = np.cos(theta_S_pfrac*u.deg)
-        self.pfrac = RectBivariateSpline(wave_pfrac, cos_th_S_pfrac, pfrac.T)
+        self.pfrac_aux = RectBivariateSpline(wave_pfrac, -cos_th_S_pfrac, pfrac.T)
 
         wave_dsig, theta_S_dsig, dsig = self.read_file(s_fname)
         cos_th_S_dsig = np.cos(theta_S_dsig*u.deg)
         dsig_use = dsig/self.dsigma_norm.to(u.cm**2).value
-        self.diff_cross_section = RectBivariateSpline(wave_dsig, cos_th_S_dsig, dsig_use.T)
+        self.diff_cross_section_aux = RectBivariateSpline(wave_dsig, -cos_th_S_dsig, dsig_use.T)
 
         return 
+    
+    def pfrac(self, wave, cos_th):
+        return self.pfrac_aux(wave, -cos_th)
+    
+    def diff_cross_section(self, wave, cos_th):
+        return self.diff_cross_section_aux(wave, -cos_th)
 
     def read_file(self, fname):
         wave = list()
