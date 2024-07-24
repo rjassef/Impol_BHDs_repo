@@ -3,8 +3,26 @@ import os
 import astropy.units as u
 from scipy.interpolate import RegularGridInterpolator
 
-from draine_dust import draine_dust
+from draine_dust_2D import draine_dust
 from torus_model import torus_model
+
+###
+#The code is written to generate a draine_dust model that only operates at a single wavelength. The draine_dust_2D model interpolates on wavelength. So here we will make a simple obejct to transform one into the other. 
+class draine_dust_1D(object):
+
+    def __init__(self, lam_targ, dust_type):
+        self.dd2D_obj = draine_dust(dust_type)
+        self.dsigma_norm = self.dd2D_obj.dsigma_norm
+        self.type = dust_type
+        self.lam_targ = lam_targ
+        return
+    
+    def pfrac(self, costh):
+        return self.dd2D_obj.pfrac(self.lam_targ, costh)
+    
+    def diff_cross_section(self, costh):
+        return self.dd2D_obj.diff_cross_section(self.lam_targ, costh)
+    
 
 class PolWaveDust(object):
 
@@ -49,12 +67,12 @@ class PolWaveDust(object):
         s1_aux = s1_data.reshape([len(wave_grid), len(theta_grid), len(psi_aux)])
 
         #Now, we need to add for each wavelength an extra value for psi=0.
-        psi_grid = np.zeros(len(psi_aux)+1)
+        psi_grid = np.zeros(len(psi_aux)+1)*u.deg
         psi_grid[1:] = psi_aux
         p_grid = np.zeros((p_aux.shape[0], p_aux.shape[1], p_aux.shape[2]+1))
         s1_grid = np.zeros((s1_aux.shape[0], s1_aux.shape[1], s1_aux.shape[2]+1))
         for k, wave in enumerate(wave_grid):
-            dust = draine_dust(wave, self.dust_type)
+            dust = draine_dust_1D(wave, self.dust_type)
             for j, theta in enumerate(theta_grid):
                 tmod = torus_model(theta, dust)
                 p_grid[k,j,0] = tmod.p_psi0(np.cos(theta), forward_scattering=self.fw, backward_scattering=self.bw)
