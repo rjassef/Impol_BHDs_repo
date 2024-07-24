@@ -1,29 +1,23 @@
 import numpy as np
-import os
 import astropy.units as u
 from scipy.interpolate import interp1d
 
 class draine_dust(object):
 
-    def __init__(self, wave_targ, type='SMC', folder=None):
+    def __init__(self, wave_targ, type='SMC', folder="./"):
         #self.dsigma_norm = 1e-24*u.cm**2
         self.dsigma_norm = 1*u.cm**2
         self.type = type
 
-        if folder is None:
-            self.folder = os.path.dirname(os.path.realpath(__file__))
-        else:
-            self.folder = folder
-
         if type=='SMC':
-            p_fname = self.folder+"/draine_models/callscat_init_p.out_SMC_bar"
-            s_fname = self.folder+"/draine_models/callscat_init_i.out_SMC_bar"
+            p_fname = folder+"draine_models/callscat_init_p.out_SMC_bar"
+            s_fname = folder+"draine_models/callscat_init_i.out_SMC_bar"
         elif type=='LMC':
-            p_fname = self.folder+"/draine_models/callscat_init_p.out_LMC_avg"
-            s_fname = self.folder+"/draine_models/callscat_init_i.out_LMC_avg"
+            p_fname = folder+"draine_models/callscat_init_p.out_LMC_avg"
+            s_fname = folder+"draine_models/callscat_init_i.out_LMC_avg"
         elif type=='MW':
-            p_fname = self.folder+"/draine_models/callscat_init_p.out_MW_3.1"
-            s_fname = self.folder+"/draine_models/callscat_init_i.out_MW_3.1"
+            p_fname = folder+"draine_models/callscat_init_p.out_MW_3.1"
+            s_fname = folder+"draine_models/callscat_init_i.out_MW_3.1"
         else:
             print("Unknown dust type")
             return
