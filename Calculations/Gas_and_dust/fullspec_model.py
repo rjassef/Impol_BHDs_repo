@@ -18,6 +18,8 @@ class draine_dust_1D(object):
 
     def __init__(self, lam_targ, dust_type):
         self.dd2D_obj = draine_dust(dust_type)
+        self.dsigma_norm = self.dd2D_obj.dsigma_norm
+        self.type = dust_type
         self.lam_targ = lam_targ
         return
     
