@@ -24,10 +24,10 @@ class draine_dust_1D(object):
         return
     
     def pfrac(self, costh):
-        return self.dd2D_obj.pfrac((lam_targ, costh))
+        return self.dd2D_obj.pfrac(lam_targ, costh)
     
     def diff_cross_section(self, costh):
-        return self.dd2D_obj.diff_cross_section((lam_targ, costh))
+        return self.dd2D_obj.diff_cross_section(lam_targ, costh)
 
 
 ###
