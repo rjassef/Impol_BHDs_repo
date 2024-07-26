@@ -2,6 +2,8 @@ import numpy as np
 import os
 import astropy.units as u
 from scipy.interpolate import RegularGridInterpolator
+from synphot import SpectralElement, Observation, SourceSpectrum
+from synphot.models import Empirical1D
 
 from draine_dust_2D import draine_dust
 from torus_model import torus_model
@@ -83,3 +85,23 @@ class PolWaveDust(object):
 
         return wave_grid, theta_grid, psi_grid, p_grid, s1_grid
     
+    def p_bb(self, band, ths, psis, spec_lam_obs, spec_flam, z):
+
+        p_bb_output = np.ma.zeros((len(ths), len(psis)))
+        lam_grid = spec_lam_obs/(1.+z)
+
+        full_spec = SourceSpectrum(Empirical1D, points=spec_lam_obs, lookup_table=spec_flam, keep_neg=True)
+        obs_I = Observation(full_spec, band, force='extrap')
+        Ibb = obs_I.effstim(flux_unit='flam').value
+        
+        for i, psi in enumerate(psis):
+            for j, th in enumerate(ths):
+                p_aux = self.p((lam_grid, th*np.ones(lam_grid.shape), psi*np.ones(lam_grid.shape)))
+                Q_spec = SourceSpectrum(Empirical1D, points=spec_lam_obs, lookup_table=spec_flam * p_aux, keep_neg=True)
+                obs_Q = Observation(Q_spec, band, force='extrap')
+                Qbb = obs_Q.effstim(flux_unit='flam').value
+
+                p_bb_output[j,i]= Qbb/Ibb
+        
+        return p_bb_output
+
