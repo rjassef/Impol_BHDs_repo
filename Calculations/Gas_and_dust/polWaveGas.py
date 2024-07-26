@@ -8,7 +8,7 @@ from torus_model import torus_model
 
 class PolWaveGas(object):
 
-    def __init__(self, fw=True, bw=True, folder=None):
+    def __init__(self, fw=True, bw=True, folder=None, interp_method='linear'):
 
         #Save the input parameters.
         self.fw = fw
@@ -17,13 +17,14 @@ class PolWaveGas(object):
             self.folder = os.path.dirname(os.path.realpath(__file__))+"/gas_models/"
         else:
             self.folder = folder
+        self.medium_type = "Gas"
 
         #Read the model. 
         self.theta_grid, self.psi_grid, self.p_grid, self.s1_grid = self.read_model()
 
         #Interpolate the model.
-        self.p = RegularGridInterpolator((self.theta_grid, self.psi_grid), self.p_grid, bounds_error=False, fill_value=None)
-        self.s1 = RegularGridInterpolator((self.theta_grid, self.psi_grid), self.s1_grid, bounds_error=False, fill_value=None)
+        self.p = RegularGridInterpolator((self.theta_grid, self.psi_grid), self.p_grid, bounds_error=False, fill_value=None, method=interp_method)
+        self.s1 = RegularGridInterpolator((self.theta_grid, self.psi_grid), self.s1_grid, bounds_error=False, fill_value=None, method=interp_method)
 
         return
 
@@ -45,7 +46,7 @@ class PolWaveGas(object):
         s1_aux = s1_aux.reshape([len(theta_grid),len(psi_aux)])
 
         #Now, we need to add for each wavelength an extra value for psi=0.
-        psi_grid = np.zeros(len(psi_aux)+1)
+        psi_grid = np.zeros(len(psi_aux)+1)*u.deg
         psi_grid[1:] = psi_aux
         p_grid = np.zeros((p_aux.shape[0], p_aux.shape[1]+1))
         s1_grid = np.zeros((p_aux.shape[0], p_aux.shape[1]+1))

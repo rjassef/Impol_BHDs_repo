@@ -26,10 +26,11 @@ class draine_dust_1D(object):
 
 class PolWaveDust(object):
 
-    def __init__(self, dust_type, fw=True, bw=True, folder=None, interp_method='cubic'):
+    def __init__(self, dust_type, fw=True, bw=True, folder=None, interp_method='linear'):
 
         #Save the input parameters.
         self.dust_type = dust_type
+        self.medium_type = dust_type
         self.fw = fw
         self.bw = bw
         if folder is None:
