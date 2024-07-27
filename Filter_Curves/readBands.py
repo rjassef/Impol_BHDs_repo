@@ -32,6 +32,10 @@ class ReadBands(object):
             data = np.loadtxt("{}/{}".format(self.script_folder,self.filt_files[band]),skiprows=skiprows)
             wave = data[:,0]*10
             thru = data[:,1]
-            self.bp[band] = SpectralElement(Empirical1D, points=wave[wave<10000.], lookup_table=thru[wave<10000.], keep_neg=True)
+
+            #We remove wavelengths above 1um to not have issues with the spectral overlap, and to not overly rely on the SED model extrapolation. Removing the wavelengths below 4000 and throughput below 0.01 has a measurable effect in some targets. This is how it was being done before, but there is no real reason to. Change the commented line to reproduce those earlier results. 
+            #cond = (wave<10000.) & (thru>0.01) & (wave>4000.)
+            cond = (wave<10000.)
+            self.bp[band] = SpectralElement(Empirical1D, points=wave[cond], lookup_table=thru[cond], keep_neg=True)
 
         return 

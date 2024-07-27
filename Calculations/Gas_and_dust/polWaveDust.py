@@ -88,7 +88,7 @@ class PolWaveDust(object):
     def p_bb(self, band, ths, psis, spec_lam_obs, spec_flam, z):
 
         p_bb_output = np.ma.zeros((len(ths), len(psis)))
-        lam_grid = spec_lam_obs/(1.+z)
+        lam_grid = spec_lam_obs.to(u.AA).value/(1.+z)
 
         full_spec = SourceSpectrum(Empirical1D, points=spec_lam_obs, lookup_table=spec_flam, keep_neg=True)
         obs_I = Observation(full_spec, band, force='extrap')
