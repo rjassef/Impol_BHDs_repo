@@ -11,50 +11,29 @@ from scipy.signal import savgol_filter
 
 class PolModel(object):
 
-    def __init__(self, spec, spec_model):
+    def __init__(self, spec, spec_model, bands, op):
 
-        #Load the measured values of p.
-        data = np.loadtxt("pol_measurements.dat",usecols=[1,2])
-        self.p_measured = data[:,0]
-        self.p_unc = data[:,1]
+        # #Load the measured values of p.
+        # data = np.loadtxt("pol_measurements.dat",usecols=[1,2])
+        # self.p_measured = data[:,0]
+        # self.p_unc = data[:,1]
 
         #Load the filters. 
-        self.load_bands()
+        # self.load_bands()
+        #Order of the bands must be v, R and then I. 
+        self.bands = list()
+        self.p_measured = np.zeros(3)
+        self.p_unc = np.zeros(3)
+        for j,bname in enumerate(["v_HIGH","R_SPECIAL","I_BESS"]):
+            self.bands.append(bands.bp[bname])
+            self.p_measured[j] = op.pfrac["W0116-0505"][bname]/100.
+            self.p_unc[j] = op.epfrac["W0116-0505"][bname]/100.
 
         #Save the spec and the spec model loaded for the pol model. 
         self.spec = spec
         self.spec_model = spec_model
 
         return
-
-    def load_bands(self):
-
-        #Load the filters.
-        filters_folder = "{}/Impol_Blue_HotDOGs/Impol_BHDs_repo/Filter_Curves/".format(os.path.expanduser("~"))
-        R_spec = np.loadtxt(filters_folder+"M_SPECIAL_R.txt")
-        I_bess = np.loadtxt(filters_folder+"M_BESS_I.txt")
-        v_high = np.loadtxt(filters_folder+"v_HIGH.txt", skiprows=2)
-
-        R_spec = R_spec[R_spec[:,1]>0.01]
-        I_bess = I_bess[I_bess[:,1]>0.01]
-        v_high = v_high[v_high[:,1]>0.01]
-
-        #Transform the wavelengths to angstroms.
-        R_spec[:,0] *= 10
-        I_bess[:,0] *= 10
-        v_high[:,0] *= 10
-
-        v_high = v_high[(v_high[:,0]>4000.) & (v_high[:,0]<10000.)]
-        I_bess = I_bess[(I_bess[:,0]>4000.) & (I_bess[:,0]<10000.)]
-        R_spec = R_spec[(R_spec[:,0]>4000.) & (R_spec[:,0]<10000.)]
-
-        Rbp= SpectralElement(Empirical1D, points=R_spec[:,0], lookup_table=R_spec[:,1]/100., keep_neg=False)
-        Ibp= SpectralElement(Empirical1D, points=I_bess[:,0], lookup_table=I_bess[:,1]/100., keep_neg=False)
-        vbp= SpectralElement(Empirical1D, points=v_high[:,0], lookup_table=v_high[:,1]/100., keep_neg=False)
-
-        self.bands = [vbp, Rbp, Ibp]
-        return
-
 
     def spec_plot(self, smooth=True):
 
@@ -73,9 +52,9 @@ class PolModel(object):
         trans = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
         for j, band in enumerate(self.bands):
             if j==0:
-                norm = 1.
+                norm = 1./100.
             else: 
-                norm = 100.
+                norm = 1.
             plt.plot(band.model.points[0], band.model.lookup_table*norm, color='xkcd:grey', transform=trans, alpha=0.5)
 
         ax.set_ylabel(r'$f_{{\lambda}}$ ({})'.format(self.spec.flam.unit))
@@ -92,7 +71,7 @@ class PolModel(object):
         full_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec.flam, keep_neg=True)
 
         #Use the best-fit model to load the spectrum for the I stoke parameters. 
-        #I_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec_model.flam_model(self.spec.lam_rest), keep_neg=True)
+        I_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec_model.flam_model(self.spec.lam_rest), keep_neg=True)
 
         #The A spec corresponds to the continuum contribution to the stokes parameters. 
         A_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec_model.flam_cont_model(self.spec.lam_rest) * pfrac_A, keep_neg=True)
@@ -108,9 +87,13 @@ class PolModel(object):
         a = np.zeros(len(self.bands))
         b = np.zeros(len(self.bands))
         for j, band in enumerate(self.bands):
-            obs_I = Observation(full_spec, band)
-            obs_A = Observation(A_spec, band)
-            obs_B = Observation(B_spec, band)
+            binset_cond = self.spec.lam_obs.to(u.AA).value<band._model.points[0].max()
+            binset_cond = binset_cond & (self.spec.lam_obs.to(u.AA).value>band._model.points[0].min())
+            binset=self.spec.lam_obs[binset_cond]
+            #obs_I = Observation(full_spec, band, binset=binset)
+            obs_I = Observation(I_spec, band, binset=binset)
+            obs_A = Observation(A_spec, band, binset=binset)
+            obs_B = Observation(B_spec, band, binset=binset)
 
             I_BB = obs_I.effstim(flux_unit='flam').value
             a[j] = obs_A.effstim(flux_unit='flam').value/I_BB

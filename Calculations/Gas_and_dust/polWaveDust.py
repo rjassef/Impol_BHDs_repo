@@ -90,15 +90,20 @@ class PolWaveDust(object):
         p_bb_output = np.ma.zeros((len(ths), len(psis)))
         lam_grid = spec_lam_obs.to(u.AA).value/(1.+z)
 
+        #Make the binset for the observations. 
+        binset_cond = spec_lam_obs.to(u.AA).value<band._model.points[0].max()
+        binset_cond = binset_cond & (spec_lam_obs.to(u.AA).value>band._model.points[0].min())
+        binset = spec_lam_obs[binset_cond]
+
         full_spec = SourceSpectrum(Empirical1D, points=spec_lam_obs, lookup_table=spec_flam, keep_neg=True)
-        obs_I = Observation(full_spec, band, force='extrap')
+        obs_I = Observation(full_spec, band, binset=binset)#force='extrap')
         Ibb = obs_I.effstim(flux_unit='flam').value
         
         for i, psi in enumerate(psis):
             for j, th in enumerate(ths):
                 p_aux = self.p((lam_grid, th*np.ones(lam_grid.shape), psi*np.ones(lam_grid.shape)))
                 Q_spec = SourceSpectrum(Empirical1D, points=spec_lam_obs, lookup_table=spec_flam * p_aux, keep_neg=True)
-                obs_Q = Observation(Q_spec, band, force='extrap')
+                obs_Q = Observation(Q_spec, band, binset=binset)#force='extrap')
                 Qbb = obs_Q.effstim(flux_unit='flam').value
 
                 p_bb_output[j,i]= Qbb/Ibb

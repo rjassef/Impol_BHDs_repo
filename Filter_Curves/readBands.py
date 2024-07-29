@@ -35,7 +35,8 @@ class ReadBands(object):
 
             #We remove wavelengths above 1um to not have issues with the spectral overlap, and to not overly rely on the SED model extrapolation. Removing the wavelengths below 4000 and throughput below 0.01 has a measurable effect in some targets. This is how it was being done before, but there is no real reason to. Change the commented line to reproduce those earlier results. 
             #cond = (wave<10000.) & (thru>0.01) & (wave>4000.)
-            cond = (wave<10000.)
+            #Now, we do need to put a lower bound to the bands, since the files for v- and I- go down to 3300A, but the W0116-0505 spectrum (the only objects observed in these two bands), only goes down to 3800A with signal. The problem is there is some small leak for I in the shortest wavelengths, so we have to be judicious on how to do it, and 3800A seems the best compromise. For R_SPECIAL this is not an issue as the sensitive does not extend below 5000A. 
+            cond = (wave<10000.) & (wave>3800.) #& (thru>0.01)
             self.bp[band] = SpectralElement(Empirical1D, points=wave[cond], lookup_table=thru[cond], keep_neg=True)
 
         return 
