@@ -6,6 +6,7 @@ log.txt
 *.opos
 *.phot
 BHDs_2D_getpol.ipynb
+mrn77_oa_grid_fits.zip
 
 #Ignore mac specific files. 
 .DS_Store
