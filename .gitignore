@@ -7,6 +7,9 @@ log.txt
 *.phot
 BHDs_2D_getpol.ipynb
 mrn77_oa_grid_fits.zip
+mrn77_oa_grid_stokesQ_fits.zip
+mrn77_oa_grid_stokesU_fits.zip
+wetransfer_mrn77_oa_grid_stokesq_fits-zip_2024-07-31_1216.zip
 
 #Ignore mac specific files. 
 .DS_Store
