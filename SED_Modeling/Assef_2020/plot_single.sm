@@ -1,0 +1,359 @@
+upd 0 
+	macro read plot_single.sm
+
+readdata2
+	
+
+	data single.21
+	read { id1 1 jy 2 jymod 3 ejy 4 usejy 5 lam 6}
+	set llam = lg(lam)
+	set jy = (usejy>0) ? jy:0.
+
+
+	data single.20
+	read { id2 1 z 2 chi 3 v1 4 v2 5 v3 6 v4 7}
+
+	#data zphot_nomips.fixigm.sort
+	#read {id3 1 zp 3 zs 4}	
+
+	data single.22
+	read {euse 2 guse 4 name 5.s}
+
+	data agn_spec.dat
+	lines 2 0
+	read { lams 1 s1 3 s2 4 s3 5 s4 6 tau 9}
+	set llams=lg(lams)
+
+	#data uds8_v0.2_AGN_for_Roberto.cat
+	#lines 2 0
+	#read {agn_flag 33.s}
+	#data probs.dat
+	#read {wp 1 ip 2}
+
+	#data sed_fit_parameters.txt
+	#read {ahat 5}
+
+
+
+plotspec 4
+
+	set smod2   = s1*$1 + s2*$2 + s3*$3 + s4*$4
+	set smod2   = smod2/lams
+	set smod20  = smod2
+	set smod2   = lg(abs(smod2))
+	connect llams smod2 if (smod20 > 0)
+	ltype 2
+	connect llams smod2 if (smod20 <= 0)
+	ltype 0
+
+
+hplot 0
+
+      foreach iid id2 {      
+      	      set iname = name if(id2==$iid)
+      	      device postencap $(iname[0]).eps
+      	      plot $iid
+	      device x11
+	      #pause
+      }
+
+plot 1
+
+	erase
+	location 5000 31000 3500 31000
+	notation 0 0 1 1
+
+	#echo $1 $($iid+1) $(codes[$iid])
+
+	lweight 2
+
+	set zuse   = z     if (id2 == $1)
+	set cuse   = chi   if (id2 == $1)
+	set jyuse  = jy    if (id1 == $1)
+	set moduse = jymod if (id1 == $1)
+	set lamuse = lam   if (id1 == $1)
+	set ejyuse = ejy   if (id1 == $1)
+	set v1use  = v1    if (id2 == $1)
+	set v2use  = v2    if (id2 == $1)
+	set v3use  = v3    if (id2 == $1)
+	set v4use  = v4    if (id2 == $1) 
+	set euseuse= euse  if (id2 == $1)
+	set guseuse= guse  if (id2 == $1)
+	set usejyuse = usejy if(id1 == $1)
+	#set agnuse = agn_flag if(id2 == $1)
+	set idnameuse = idname if(id2 == $1)
+	#set ahatuse = ahat if(id2 == $1)
+	#set zsuse = zs if(id2 == $1)
+	#set zpuse = zp if(id2 == $1)
+	#set wpuse = wp if(id2 == $1)
+	#set ipuse = ip if(id2 == $1)
+	set nameuse = name if (id2 == $1)
+
+	print { v1use v2use v3use v4use euseuse guseuse}
+
+	set s1x = s1*10**(-0.4*tau*euseuse[0])
+
+	set jj = 0,dimen(lams)-1
+	set dimen(tigm) = dimen(lams)
+	foreach ii jj {
+		transmit lams[$ii] zuse[0] guseuse[0] tigm[$ii]
+	}
+
+	set s1x = s1x*tigm
+	set s2x = s2 *tigm
+	set s3x = s3 *tigm
+	set s4x = s4 *tigm
+		
+
+	set ndat   = dimen(jyuse)
+	if (ndat > 0) { 
+		set smod   = s1x*v1use[0] + s2x*v2use[0] + s3x*v3use[0] + s4x*v4use[0]
+		set llam   = lg(lamuse)
+		set jyuse  = jyuse/lamuse
+		set moduse = moduse/lamuse
+		set ejyuse = ejyuse/lamuse
+		set smod   = smod/lams
+		set smod1  = v1use[0]*s1x/lams
+		set smod2  = v2use[0]*s2x/lams
+		set smod3  = v3use[0]*s3x/lams
+		set smod4  = v4use[0]*s4x/lams
+
+		# try log
+  		set jyuse0 = jyuse
+  		set smod0  = smod
+		set llamsave = llam
+		set jyusesave = jyuse
+		set ejyusesave = ejyuse
+  		set ejyuse = (jyuse > 0) ? (ejyuse/(jyuse+1.e-32))/ln(10.0) : 0.0
+  		set jyuse  = (jyuse > 0) ? lg(abs(jyuse)+1.e-32) : 0.0
+  		set smod   = lg(abs(smod))         #+ lg(1.+zuse[0])
+  		set smod1  = lg(abs(smod1)+1.e-32) #+ lg(1.+zuse[0])
+  		set smod2  = lg(abs(smod2)+1.e-32) #+ lg(1.+zuse[0])
+		set smod3  = lg(abs(smod3)+1.e-32) #+ lg(1.+zuse[0])
+		set smod4  = lg(abs(smod4)+1.e-32) #+ lg(1.+zuse[0])
+  		set moduse = lg(moduse)
+ 	 	set smodh  = smod-1
+  		set temp   = jyuse
+  		sort < temp >
+  		set jymin  = temp[0]
+		set foo    = jyuse if(jyusesave>0)
+  		set foo    = foo concat smod concat smodh
+  		set foo    = (foo < jymin-1.5) ? jymin-1.5 : foo
+  		limits llams foo
+		limits $fx1 $fx2 $fy1 $($fy2+1)
+		#limits $fx1 $fx2 -5 -2
+  		ticksize -1 0 -1 0
+		expand 1.8
+  		box
+		expand 1.1
+  		connect llams smod if (smod0 > 0)
+  		ctype blue
+  		connect llams smod1
+  		ctype red
+  		connect llams smod2
+  		ctype green
+  		connect llams smod3
+		ctype cyan
+		connect llams smod4
+  		ctype black
+  		ltype 2
+  		connect llams smod if (smod0 < 0)
+  		ltype 0
+ 	 	ptype 4 3
+  		expand 2
+  		ctype red
+  		#points llam jyuse if (jyuse0 == 0 ) 
+  		ctype green
+		set j=1,dimen(jyuse)
+  		points llam jyuse if (jyuse0 > 0 && j>2) 
+		add_ctype gray 150 150 150
+		ctype gray
+		points llam jyuse if (jyuse0 > 0 && j<=2)
+  		expand 1
+  		ctype black
+		errorbar llam jyuse ejyuse 2  
+		errorbar llam jyuse ejyuse 4  
+		sort < llam moduse >
+		ctype cyan
+		expand 2
+		ptype 4 0
+		points llam moduse
+		expand 1
+		#plotline 1215
+		#plotline 1549
+		#plotline 1909
+		#plotline 2798
+		#plotline 4861
+		#plotline 6562
+		ctype black
+		set llamub = llamsave             if(usejyuse==2)
+		set ljyub  = lg(ejyusesave+1e-32) if(usejyuse==2)
+		if(dimen(ljyub)>0) {
+			set j=0,dimen(ljyub)-1
+			expand 0.5
+			foreach i j {
+				draw_arrow $(llamub[$i]) $(ljyub[$i]) $(llamub[$i]) $(ljyub[$i]-0.25)
+				errorbar (llamub[$i]) (ljyub[$i]-0.25) (0.25) 2
+			} 
+			expand 1.1
+		}
+		#relocate -5 0 draw 5 0
+		ticksize 0 0 0 0
+		limits 0 1 0 1
+		expand 1.5
+		#relocate 0.05 0.90 putlabel 6 ID: $(sprintf('%.0f',idnameuse[0]))
+		relocate 0.05 0.90 putlabel 6 $(nameuse[0])
+		relocate 0.05 0.85 putlabel 6 z = $(sprintf('%5.3f',zuse[0]))
+		#relocate 0.05 0.80 putlabel 6 $(sprintf('%s',agnuse[0]))
+
+		#relocate 0.95 0.90 putlabel 4 \hat{a} = $(sprintf('%5.1f',ahatuse[0]))
+		relocate 0.95 0.85 putlabel 4 AGN E(B-V) = $(sprintf('%5.1f',euseuse[0]))
+		relocate 0.95 0.80 putlabel 4 \chi^2 = $(sprintf('%5.1f',cuse[0]))
+		expand 2
+		xlabel Rest-frame \lambda (\mu{m})
+		ylabel \propto{\\nu}F_{\\nu}
+		expand 1
+	 }
+	 location 3500 31000 3500 31000
+	 notation 0 0 0 0
+	 ticksize 0 0 0 0
+
+
+
+
+plotline 1
+
+	set dimen(x) = 2
+	set dimen(y) = 2
+	set x[0]     = lg($1/10000)
+	set x[1]     = lg($1/10000)
+	set y[0]     = -10
+	set y[1]     =  10
+	connect x y
+
+specs 2
+
+	if($1==1) {dev postencap $2}
+
+	erase
+
+	ticksize -1 0 -1 0
+
+	set ls1 = (s1>0 && lams>0) ? lg(s1/lams):0
+	set ls2 = (s2>0 && lams>0) ? lg(s2/lams):0
+	set ls3 = (s3>0 && lams>0) ? lg(s3/lams):0
+	set ls4 = (s4>0 && lams>0) ? lg(s4/lams):0	
+
+	limits llams $(lg(0.003)) $(lg(15)) 
+	ctype black
+	box
+
+	ctype red
+	connect llams ls1
+	relocate $(lg(0.1)) $(lg(10))
+	draw $(lg(0.18)) $(lg(10))
+	relocate $(lg(0.2)) $(lg(10)) 
+	ctype black
+	putlabel 6 E	
+
+	ctype green
+	connect llams ls2 
+	relocate $(lg(0.1)) $(lg(6))
+	draw $(lg(0.18)) $(lg(6))
+	relocate $(lg(0.2)) $(lg(6)) 
+	ctype black
+	putlabel 6 Sbc	
+
+	ctype cyan 
+	connect llams ls3
+	relocate $(lg(1)) $(lg(10))
+	draw $(lg(1.8)) $(lg(10))
+	relocate $(lg(2)) $(lg(10)) 
+	ctype black
+	putlabel 6 Im	
+
+	ctype blue 
+	connect llams ls4
+	relocate $(lg(1)) $(lg(6))
+	draw $(lg(1.8)) $(lg(6))
+	relocate $(lg(2)) $(lg(6)) 
+	ctype black
+	putlabel 6 E+A	
+
+	xlabel \lambda (\mu m)
+	ylabel \lambda F_{\lambda}	
+
+	ltype 2
+	relocate $(lg(0.1215)) 2
+	draw $(lg(0.1215)) -3
+	relocate $(lg(0.6563)) 2
+	draw $(lg(0.6563)) -3	
+	ltype 0
+
+	ticksize 0 0 0 0
+
+	if($1==1) {
+		dev x11
+		!gv $2 &
+	}
+
+
+###
+##$1 = alamrest, $2 = zqso, $3 = scale, $4 = transmit
+
+transmit 4
+
+	set alamobs = $1*(1.0+$2)
+	set wavelya = 0.121567
+        set wavelyb = 0.102518
+	if($1>=wavelya[0]) {
+		set $4=1.0
+	} else {
+		set onepzabs = alamobs[0]/wavelya[0]
+		set tautrans = 0.85*(0.2*onepzabs[0])**4.3
+		if($1<=wavelyb[0]) {
+			set onepzabs = alamobs[0]/wavelyb[0]
+			set tautrans = tautrans + 0.38*(0.2*onepzabs)**4.3
+		}
+
+		set wavelylim = 0.091127
+		if($1 <= wavelylim[0]) {
+			set tautrans0 = 2.0
+			set onepzabs  = 1.0 + $2
+			set tautrans  = tautrans + 0.1*tautrans0[0]*(onepzabs[0]**2.5-1.0)
+		}
+
+		set $4 = exp(-1.*$3*tautrans[0])
+	}
+
+###
+
+start 
+	#data ids
+	#read {id 1 type 2}
+	#data "w2_z_type/20120430/ids_of_torus_sample.dat"
+	#read id 1
+	set id = id2
+	define iid -1
+	next
+
+###
+
+next 
+	define iid $($iid+1)
+	echo $(id[$iid]) #$(type[$iid])
+	plot $(id[$iid])
+
+###
+
+prev
+	define iid $($iid-1)
+	echo $(id[$iid]) #$(type[$iid])
+	plot $(id[$iid])
+
+###
+
+replot
+	
+	echo $(id[$iid]) #$(type[$iid])
+	plot $(id[$iid])
