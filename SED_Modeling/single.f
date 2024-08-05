@@ -73,24 +73,46 @@ c     bright by 9%. Lets make these corrections.
 
 c     Convert mags to fluxes.
          do j=1,nchan
-            if(mag(j).lt.0.d0.and.emag(j).lt.0.d0) then
-               jyuse(j) = 0
-               jy(j)    = 0.d0
-               ejy(j)   = 0.d0
-            else if(mag(j).lt.90.d0.and.emag(j).lt.90.d0) then
-               jyuse(j) = 1
-               jy(j)    = jyzero(j)*10.d0**(-0.4d0*mag(j))
-               ejy(j)   = 0.4d0*dlog(10.d0)*emag(j)*jy(j)
-            else if(mag(j).lt.90.d0.and.emag(j).gt.90.d0) then
-               jyuse(j) = 2
-               jy(j)    = 0.d0
-               ejy(j)   = jyzero(j)*10.d0**(-0.4d0*mag(j))
+            if(j.le.(nchan-5)) then
+               if(mag(j).lt.0.d0.and.emag(j).lt.0.d0) then
+                  jyuse(j) = 0
+                  jy(j)    = 0.d0
+                  ejy(j)   = 0.d0
+               else if(mag(j).lt.90.d0.and.emag(j).lt.90.d0) then
+                  jyuse(j) = 1
+                  jy(j)    = jyzero(j)*10.d0**(-0.4d0*mag(j))
+                  ejy(j)   = 0.4d0*dlog(10.d0)*emag(j)*jy(j)
+               else if(mag(j).lt.90.d0.and.emag(j).gt.90.d0) then
+                  jyuse(j) = 2
+                  jy(j)    = 0.d0
+                  ejy(j)   = jyzero(j)*10.d0**(-0.4d0*mag(j))
 c     WISE upper bounds are 2sigma, so match the others to be 2sigma.
-               if(j.gt.4) ejy(j) = ejy(j)*2.d0
+                  if(j.gt.4) ejy(j) = ejy(j)*2.d0
+               else
+                  jyuse(j) = 0
+                  jy(j)    = 0.d0
+                  ejy(j)   = 0.d0
+               endif
+c     SDSS asinh mags
             else
-               jyuse(j) = 0
-               jy(j)    = 0.d0
-               ejy(j)   = 0.d0
+               ib = j-(nchan-5)
+               if(mag(j).gt.0.d0.and.mag(j).lt.90.d0) then
+                  asinval = -0.4d0*dlog(10.d0)*mag(j)-dlog(bcon(ib))
+                  jy(j)   = jyzero(j)*bcon(ib)*(dexp(asinval)-dexp(-asinval))
+                  ejy(j)  = bcon(ib)*(dexp(asinval)+dexp(-asinval))
+                  ejy(j)  = 0.4d0*dlog(10.d0)*jyzero(j)*ejy(j)*emag(j)
+                  if(jy(j).gt.0.d0) then
+                     jyuse(j) = 1
+                  else
+                     jyuse(j) = 2
+                     jy(j)    = 0.d0
+                     ejy(j)   = 3.d0*bcon(ib)*3631.d0
+                  endif
+               else
+                  jyuse(j) = 0
+                  jy(j)    = 0.d0
+                  ejy(j)   = 0.d0
+               endif
             endif
          enddo
 
