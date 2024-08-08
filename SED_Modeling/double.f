@@ -136,18 +136,18 @@ c         if(jyuse(5).eq.1) jyuse(1) = 0
 c         if(jyuse(6).eq.1) jyuse(2) = 0
 
 c     Do not use bands that contain uncommonly bright lines (as seen in W2246 or W1904 for example). 
-c         mask_lam(1) = 0.5007
-c         mask_lam(2) = 0.6563
-c         mask_lam(3) = 0.3727 ![OII]
-   !       nmask = 1
-   !       do nnmask=1,nmask
-   !          do j=1,nchan
-   !             if((lbar(j)-0.3.lt.mask_lam(nnmask)*(1+z)).and.
-   !   *            (lbar(j)+0.3.gt.mask_lam(nnmask)*(1+z))) then
-   !                jyuse(j) = 0
-   !             endif
-   !          enddo
-   !       enddo
+!          mask_lam(1) = 0.5007
+! c         mask_lam(2) = 0.6563
+! c         mask_lam(3) = 0.3727 ![OII]
+!          nmask = 1
+!          do nnmask=1,nmask
+!             do j=1,nchan
+!                if((lbar(j)-0.1.lt.mask_lam(nnmask)*(1+z)).and.
+!      *            (lbar(j)+0.1.gt.mask_lam(nnmask)*(1+z))) then
+!                   jyuse(j) = 0
+!                endif
+!             enddo
+!          enddo
 
 c     Get the number of usable bands.
          m = 0
