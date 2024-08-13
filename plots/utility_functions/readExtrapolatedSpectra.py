@@ -83,7 +83,7 @@ class ReadExtrapolatedSpectra(object):
         self.sed_lam_obs = dict()
         self.sed_flam = dict()
         for wid in self.wids:
-            sed = np.loadtxt("{}/../SED_models/{}.SED.txt".format(self.script_folder, wid))
+            sed = np.loadtxt("{}/../../SED_Modeling/{}.SED.txt".format(self.script_folder, wid))
             sed_lam_obs = sed[:,0] * u.micron * (1+self.specs.sp[wid].zspec)
             sed_nu_obs = c/sed_lam_obs
             sed_fnu = np.sum(sed[:,1:], axis=1) * 1e-13*u.erg/u.s/u.cm**2 

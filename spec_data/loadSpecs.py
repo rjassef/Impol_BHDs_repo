@@ -29,8 +29,8 @@ class LoadSpecs(object):
         cat.close()
 
         #Read the redshifts of all the objects.
-        d20 = open(self.folder+"/../plots/SED_models/double.20")
-        d22 = open(self.folder+"/../plots/SED_models/double.22")
+        d20 = open(self.folder+"/../SED_Modeling/double.20")
+        d22 = open(self.folder+"/../SED_Modeling/double.22")
         for line in d20:
             x = line.split()
             y = d22.readline().split()

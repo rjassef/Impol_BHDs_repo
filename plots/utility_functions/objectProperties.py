@@ -50,8 +50,8 @@ class ObjectProperties(object):
 
         #Find the redshift of each object. 
         self.z = dict()
-        d20 = open("{}/../SED_models/double.20".format(self.script_folder))
-        d22 = open("{}/../SED_models/double.22".format(self.script_folder))
+        d20 = open("{}/../../SED_Modeling/double.20".format(self.script_folder))
+        d22 = open("{}/../../SED_Modeling/double.22".format(self.script_folder))
         for line in d20:
             x = line.split()
             y = d22.readline().split()
