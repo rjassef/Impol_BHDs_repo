@@ -1,0 +1,19 @@
+##
+#Filter Name		       Norm       Zero Point
+##
+real_wise_band_1		 1	   306.681
+real_wise_band_2		 1	   170.663
+real_wise_band_3		 1	    29.0448
+real_wise_band_4		 1	     8.2839
+IRAC_ch1_total_response 	 2	   277.50
+IRAC_ch2_total_response 	 2	   179.50
+sdssu				 3	  3631.00
+sdssg				 3	  3631.00
+sdssr				 3	  3631.00
+sdssi				 3	  3631.00
+sdssz				 3	  3631.00
+jband				 1	  1631.00
+hband				 1	  1024.00
+kband				 1	   675.70
+sdssg				 3	  3631.00
+sdssr				 3	  3631.00
