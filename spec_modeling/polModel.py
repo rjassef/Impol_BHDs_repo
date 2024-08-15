@@ -108,6 +108,13 @@ class PolModel(object):
         a, b = self.get_a_b(pfrac_A, pfrac_B)
         return (a**2 + b**2 + 2*a*b*np.cos(2*x[0]*u.deg))**0.5
 
+    #Function to return the broad-band polarization angle under the assumption that the continuum polarization angle is 0. 
+    def model_chiBB(self, x, scat_obj):
+        pfrac_A = scat_obj.pfrac_A(x, self.spec.lam_rest)
+        pfrac_B = scat_obj.pfrac_B(x, self.spec.lam_rest)
+        a, b = self.get_a_b(pfrac_A, pfrac_B)
+        return 0.5*np.arctan2(b*np.sin(2*x[0]*u.deg),(a+b*np.cos(2*x[0]*u.deg)))     
+
     def chi2(self, x, scat_obj):
         p_mod = self.model_p(x, scat_obj)
         return np.sum(((self.p_measured-p_mod)/self.p_unc)**2)
@@ -123,7 +130,8 @@ class PolModel(object):
         self.xopt = minimize(self.chi2, x0=x0, constraints=lincon, args=(scat_obj), method=method)        
 
         #Save the best-fit model broad-band polarizations.
-        self.mod_p = self.model_p(self.xopt.x, scat_obj)
+        self.mod_p   = self.model_p(self.xopt.x, scat_obj)
+        self.mod_chi = self.model_chiBB(self.xopt.x, scat_obj)
 
         #Print the results.
         print(self.xopt.message)
