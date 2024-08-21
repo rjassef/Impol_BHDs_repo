@@ -65,8 +65,8 @@ class RunPhot(object):
             bkg_estimator = SExtractorBackground(sigma_clip)
 
             #First subtract the background for the e-beam, and then repeat for the o-beam. 
-            ebkg = Background2D(h[0].data, box_size , filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=emask.astype(bool), mask=source_mask)
-            obkg = Background2D(h[0].data, box_size, filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=omask.astype(bool), mask=source_mask)
+            ebkg = Background2D(h[0].data, box_size , filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=emask.astype(bool))#, mask=source_mask)
+            obkg = Background2D(h[0].data, box_size, filter_size=(3,3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, coverage_mask=omask.astype(bool))#, mask=source_mask)
             h[0].data -= ebkg.background*(1-emask) + obkg.background*(1-omask)
             h[0].data[mask] = np.nan
 
