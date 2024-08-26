@@ -1,0 +1,84 @@
+Data Summary Page     Spitzer Heritage Archive (SHA)     Date: 2016-04-07 08:02:18.00
+ 
+These Spitzer data were retrieved from the Spitzer Heritage Archive
+housed at the Infrared Science Archive (IRSA) at the Infrared
+Processing and Analysis Center (IPAC), California Institute of
+Technology.  For comprehensive information about the Spitzer mission
+and data reduction (including instrument handbooks and a data analysis
+cookbook), please see our mission website, housed at IRSA.
+ 
+This file provides:
+1. Basic observation information
+2. Results of Spitzer data quality analysis (DQA)
+3. An accounting of the raw data and processed products
+4. Pipeline software version information
+5. List of important Spitzer Heritage Archive filenames
+ 
+List of Acronyms:
+DCE     Data Collection Event (raw-data FITS file)
+        also known as Level 0
+BCD     Basic Calibrated Data (processed-data FITS file)
+        also known as Level 1
+PBCD    Post-BCD (higher-level products, such as mosaics), 
+        also known as Level 2
+AOR     Astronomical Observation Request
+IER     Instrument Engineering Request (a special kind of AOR)
+DQA     Data Quality Analysis
+SHA     Spitzer Heritage Archive
+ 
+ 
+(1) DESCRIPTION OF OBSERVATION REQUEST (AOR or IER)
+Telescope:             Spitzer
+CampaignId:            1633 (IRAC027200)
+Request Type:          AOR
+Mode:                  IRAC Map PC
+AORKEY:                41351168
+Observer:              Peter Eisenhardt
+Target Name:           W0204-05
+Program Title:         PRME
+Program ID:            70162
+AOR Title:             W12 - W0204-05
+Observation Start:     2011-02-28 00:29:04.707
+Observation End:       2011-02-28 00:35:15.066
+This request was taken during the post-cryogenic mission.
+ 
+(2) DATA-QUALITY-ANALYSIS RESULTS
+Quality status:    Nominal/OK to Release
+ 
+(3) SUMMARY OF REQUEST'S SCIENCE-DATA CONTENT
+Expected number of DCEs (all channels):  22
+Received number of DCEs (all channels):  22
+Number of missing DCEs (all channels):   0
+Number of received DCEs with missing keywords (all channels): 0
+Number of received DCEs with missing image data (all channels): 0
+Number of received channel-1 DCEs:  11
+Number of received channel-2 DCEs:  11
+Number of received channel-3 DCEs:  0
+Number of received channel-4 DCEs:  0
+Number of successfully pipeline-processed channel-1 DCEs:  11
+Number of successfully pipeline-processed channel-2 DCEs:  11
+Number of channel-1 DCEs that cannot be pipeline-processed:  0
+Number of channel-2 DCEs that cannot be pipeline-processed:  0
+Number of channel-1 BCDs made with predicted pointing:  0
+Number of channel-2 BCDs made with predicted pointing:  0
+ 
+(4) PIPELINE SOFTWARE VERSION INFORMATION
+IRAC Channel-1 Software Version:    S19.2.0
+IRAC Channel-2 Software Version:    S19.2.0
+IRAC Channel-3 Software Version:    S19.2.0
+IRAC Channel-4 Software Version:    S19.2.0
+ 
+(5) LIST OF IMPORTANT SPITZER HERITAGE ARCHIVE FILENAMES
+A complete index can be found at our website.
+Suffix      Description
+------------------------------------------------------
+maic.fits   Mosaic image (long frametime if data taken in HDR mode)
+mcov.fits   Mosaic coverage map (long frametime if data taken in HDR mode)
+munc.fits   Uncertainty image for mosaic (long frametime if data taken in HDR mode)
+bcd.fits    BCD image file
+bimsk.fits  BCD mask file
+bunc.fits   Uncertainty image
+cbcd.fits   Corrected BCD image file
+cbunc.fits  Corrected BCD uncertainty image
+Many more are documented in the IRAC Instrument Handbook,
+available on Spitzer mission website.
