@@ -92,13 +92,16 @@ class LoadSKIRTOR_MRN77(object):
         obs_I = Observation(full_spec, band, binset=binset)#force='extrap')
         Ibb = obs_I.effstim(flux_unit='flam').value
         
+        vt, vc, vi, vl = np.meshgrid(tangs.value, cangs.value, iangs.value, self.lam_grid.value, indexing='ij')
+        p_interp = self.p((vt, vc, vi, vl))
         for i, tang in enumerate(tangs):
             for j, cang in enumerate(cangs):
                 for k, iang in enumerate(iangs):
                     if cang+5.*u.deg>=tang or iang<=tang:
                     #if cang+10.*u.deg>=tang or iang<=tang:
                         continue
-                    p_aux = self.p((tang*np.ones(lam_grid.shape), cang*np.ones(lam_grid.shape), iang*np.ones(lam_grid.shape), lam_grid))
+                    p_aux = np.interp(lam_grid, self.lam_grid.value, p_interp[i,j,k])
+                    #p_aux = self.p((tang*np.ones(lam_grid.shape), cang*np.ones(lam_grid.shape), iang*np.ones(lam_grid.shape), lam_grid))
                     #p_aux = self.p(tang.value*np.ones(lam_grid.shape), cang.value*np.ones(lam_grid.shape), iang.value*np.ones(lam_grid.shape), lam_grid)
                     Q_spec = SourceSpectrum(Empirical1D, points=spec_lam_obs, lookup_table=spec_flam * p_aux, keep_neg=True)
                     obs_Q = Observation(Q_spec, band, binset=binset)#force='extrap')
