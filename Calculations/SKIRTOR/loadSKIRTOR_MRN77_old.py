@@ -14,13 +14,27 @@ class LoadSKIRTOR_MRN77(object):
 
         #Set the folder to use. 
         if folder is None:
-            self.folder = os.path.dirname(os.path.realpath(__file__))+"/models/"
+            self.folder = os.path.dirname(os.path.realpath(__file__))+"/models_old/"
         else:
             self.folder = folder
 
         #Make a list of all the MRN77 models. 
         ls_output = subprocess.run("ls {}/bHDPol_mrn77_tor_oa*".format(self.folder), shell=True, capture_output=True)
         fnames = ls_output.stdout.decode('utf8').split()
+
+        #Make a list of the torus opening, cone opening and inclination angles.
+        tangle = list()
+        cangle = list()
+        iangle = list()
+        for fname in fnames:
+            m = re.search("bHDPol_mrn77_tor_oa(.*)_con_oa(.*)-tauV1_i(.*)_sed.dat", fname)
+            if m.group(3)[1]!="1":
+                tangle.append(float(m.group(1)))
+                cangle.append(float(m.group(2)))
+                iangle.append(float(m.group(3)))
+        self.tang_grid = np.unique(tangle) * u.deg
+        self.cang_grid = np.unique(cangle) * u.deg
+        self.iang_grid = np.unique(iangle) * u.deg
 
         #Make a list of the wavelengths. 
         self.lam_grid = np.loadtxt(fnames[0], usecols=[0])*u.um
@@ -29,25 +43,23 @@ class LoadSKIRTOR_MRN77(object):
         self.lam_grid = self.lam_grid.to(u.AA)
         #self.lam_grid *= 10
 
-        #We need to make lists and do a non regular grid interpolation. 
-        self.grid_points = list()
-        self.grid_ps = list()
-        for fname in fnames:
-            m = re.search("bHDPol_mrn77_tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat", fname)
-            #m = re.search("bHDPol_mrn77_tor_oa(.*)_con_oa(.*)-tauV1_i(.*)_sed.dat", fname)
-            tang = float(m.group(1))*u.deg
-            cang = float(m.group(2))*u.deg
-            iang = float(m.group(3))*u.deg
-            data = np.loadtxt(fname)
-            lam  = data[:,0]*u.micron
-            lam = lam.to(u.AA)
-            #puse = -data[:,8]/data[:,1]
-            puse = (data[:,8]**2+data[:,9]**2)**0.5/data[:,1]
-            #puse = (data[:,2]**2+data[:,3]**2)**0.5/data[:,1]
-            for k in range(len(lam)):
-                self.grid_points.append((tang.value, cang.value, iang.value, lam[k].value))
-                self.grid_ps.append(puse[k])
-        self.p = LinearNDInterpolator(self.grid_points, self.grid_ps, fill_value=0.)
+        #Now make the array holding the polarization grid. 
+        self.p_grid = np.ma.zeros((len(self.tang_grid), len(self.cang_grid), len(self.iang_grid), len(self.lam_grid)))
+        self.p_grid.mask = np.zeros(self.p_grid.shape, dtype=bool)
+        for i, tang in enumerate(self.tang_grid):
+            for j, cang in enumerate(self.cang_grid):
+                for k, iang in enumerate(self.iang_grid):
+                    fname = "{}/bHDPol_mrn77_tor_oa{:.0f}_con_oa{:.0f}-tauV1_i{:.0f}_sed.dat".format(self.folder, tang.value, cang.value, iang.value)
+                    if fname in fnames:
+                        data = np.loadtxt(fname)
+                        self.p_grid[i,j,k] = -data[:,2]/data[:,1]
+                    # else:
+                    #     #self.p_grid[i,j,k] = np.nan * np.ones(len(self.lam_grid))
+                    #     if iang>tang and cang<tang:
+                    #        self.p_grid.mask[i,j,k] = np.ones(len(self.lam_grid), dtype=bool)
+
+        #Now, make the interpolator.
+        self.p = RegularGridInterpolator((self.tang_grid, self.cang_grid, self.iang_grid, self.lam_grid), self.p_grid, bounds_error=False, fill_value=0.0, method=interp_method)
 
         return
 
@@ -68,11 +80,9 @@ class LoadSKIRTOR_MRN77(object):
         for i, tang in enumerate(tangs):
             for j, cang in enumerate(cangs):
                 for k, iang in enumerate(iangs):
-                    #if cang+5.*u.deg>=tang or iang<=tang:
-                    if cang+10.*u.deg>=tang or iang<=tang:
-                        continue
-                    #p_aux = self.p((tang*np.ones(lam_grid.shape), cang*np.ones(lam_grid.shape), iang*np.ones(lam_grid.shape), lam_grid))
-                    p_aux = self.p(tang.value*np.ones(lam_grid.shape), cang.value*np.ones(lam_grid.shape), iang.value*np.ones(lam_grid.shape), lam_grid)
+                    # if cang>=tang or iang<=tang:
+                    #     continue
+                    p_aux = self.p((tang*np.ones(lam_grid.shape), cang*np.ones(lam_grid.shape), iang*np.ones(lam_grid.shape), lam_grid))
                     Q_spec = SourceSpectrum(Empirical1D, points=spec_lam_obs, lookup_table=spec_flam * p_aux, keep_neg=True)
                     obs_Q = Observation(Q_spec, band, binset=binset)#force='extrap')
                     try:
