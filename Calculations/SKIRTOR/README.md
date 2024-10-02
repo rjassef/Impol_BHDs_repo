@@ -12,3 +12,10 @@
 | $\rm MNR77_{\rm gra+\rm sil}$ | blueHotDogsPol_gs0.005-0.25_a3.5_sil | SiC+Gr (70/30) | 0.005-0.25 | -3.5 | 50 | 30 | 1.0 |
 | $\rm Gaskell04_{\rm gra}$ | blueHotDogsPol_gs0.005-0.2_a2.05 | Gr only | 0.005-0.2 | -2.05 | 50 | 30 | 1.0 |
 | $\rm Gaskell04_{\rm gra+\rm sil}$ | blueHotDogsPol_gs0.005-0.2_a2.05_sil | SiC+Gr (70/30) | 0.005-0.2 | -2.05 | 50 | 30 | 1.0 |
+| | blueHotDogsPol_gs0.1-1_a0.0 | Gr only | 0.1-1.0 |   0.0 | 50 | 30 | 1.0 |
+| | blueHotDogsPol_gs0.1-1_a0.5 | Gr only | 0.1-1.0 |  -0.5 | 50 | 30 | 1.0 |
+| | blueHotDogsPol_gs0.1-1_a1.5 | Gr only | 0.1-1.0 |  -1.5 | 50 | 30 | 1.0 |
+| | blueHotDogsPol_gs0.1-1_a2.5 | Gr only | 0.1-1.0 |  -2.5 | 50 | 30 | 1.0 |
+| | blueHotDogsPol_gs0.1-1_a3.5 | Gr only | 0.1-1.0 |  -3.5 | 50 | 30 | 1.0 |
+| | blueHotDogsPol_gs0.1-1_a3.5_sil | SiC+Gr (70/30) | 0.1-1.0 |  -3.5 | 50 | 30 | 1.0 |
+| | blueHotDogsPol_gs1-10_a3.5_sil | SiC+Gr (70/30) | 1.0-10.0 |  -3.5 | 50 | 30 | 1.0 |
