@@ -30,7 +30,7 @@ from pol_analysis.getStokes import GetStokes
 
 class ResolvedPol(object):
 
-    def __init__(self, object, band, star_coords, bhd_coords=(1022.5, 70.), root_folder=None, stamps_folder="stamps", pdata_force_new=False, phot_force_new=False, centroid_box_size=5):
+    def __init__(self, object, band, bhd_coords=(1022.5, 70.), root_folder=None, stamps_folder="stamps", pdata_force_new=False, phot_force_new=False, centroid_box_size=5):
 
         #Save input parameters. 
         self.object = object
@@ -38,7 +38,6 @@ class ResolvedPol(object):
         self.stamps_folder = stamps_folder
         self.root_folder = root_folder
         self.centroid_box_size = centroid_box_size
-        self.star_coords = star_coords
         self.bhd_coords = bhd_coords
 
         subprocess.call(["mkdir", self.stamps_folder])
@@ -76,12 +75,6 @@ class ResolvedPol(object):
             x = line.split()
             self.seeing[x[-1]] = float(x[2])
         cat.close()
-
-        # for ob_pair in self.pdata.ob_pairs:
-        #     self.pphot.find_seeing(self.star_coords[0], self.star_coords[1], ob_ids=[ob_pair[0]], mjds=[ob_pair[1]])
-        #     fnames = self.pdata.list_of_filenames(ob_ids=[ob_pair[0]], mjds=[ob_pair[1]])
-        #     for i, fname in enumerate(fnames):
-        #         self.seeing[fname] = self.pphot.seeing[i]
 
         #Zoom in region around the target. 
         self.iy1_z =   30# 25
