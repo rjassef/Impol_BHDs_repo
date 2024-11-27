@@ -350,7 +350,7 @@ class RunPhot(object):
 
             #Load the e and o beam source positions. If convolution with imagematch is requested, the only use the coordinates of the iworse image, as imagematch also does the alignment. 
             fname_use = fname
-            if apply_convolution:
+            if apply_convolution and use_immatch:
                 fname_use = fnames[iworse]
             epos = np.loadtxt("{}/{}".format(self.pdata.phot_folder, re.sub(".fits",".epos",fname_use)))
             opos = np.loadtxt("{}/{}".format(self.pdata.phot_folder, re.sub(".fits",".opos",fname_use)))
