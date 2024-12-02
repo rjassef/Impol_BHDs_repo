@@ -36,7 +36,8 @@ class ObjectProperties(object):
             self.pfrac[wid] = dict()
             self.epfrac[wid] = dict()
             for filt in self.filters[wid]:
-                data = np.genfromtxt("{}/../../analysis_v3/{}_pol_{}.dat".format(self.script_folder,wid,filt), usecols=[0,1,7], dtype=[('pfrac', '<f8'), ('epfrac','<f8'),('OBID','<U10')])
+                #data = np.genfromtxt("{}/../../analysis_v3/{}_pol_{}.dat".format(self.script_folder,wid,filt), usecols=[0,1,7], dtype=[('pfrac', '<f8'), ('epfrac','<f8'),('OBID','<U10')])
+                data = np.genfromtxt("{}/../../analysis_v4/{}_pol_{}.dat".format(self.script_folder,wid,filt), usecols=[0,1,7], dtype=[('pfrac', '<f8'), ('epfrac','<f8'),('OBID','<U10')])
                 if len(data.shape)>0:
                     k = np.argwhere(data['OBID']=="All")[0][0]
                     self.pfrac[wid][filt] = data['pfrac'][k]
