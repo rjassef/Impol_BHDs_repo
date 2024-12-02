@@ -1,0 +1,10 @@
+#Provided by Guodong. See Li et al. (2024) for details. 
+#
+#About luminosities, Guodong says: Yes, its log Lbol/Lsun. I used L5100 to estimate the Lbol as mention in our BHD paper (α = 4.7 ± 1.4). Uncertainty should be around 20% from Tsai et al. 2015.
+#
+ID              log_MBH/M_sun  log_MBH_err   log_Lbol/L_sun   log_Lbol_err
+W0019-1046          9.8           0.4           13.3             0.2
+W0116-0505          9.4           0.4           14.1             0.2
+W0204-0506          8.8           0.4           13.7             0.2
+W0220+0137          9.3           0.4           13.9             0.2
+W0831+0140          9.4           0.4           14.4             0.2
