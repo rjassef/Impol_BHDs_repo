@@ -13,6 +13,8 @@ wetransfer_mrn77_oa_grid_stokesq_fits-zip_2024-07-31_1216.zip
 SHA-aor-tbl_Files-part1.zip
 Calculations/SKIRTOR/models
 Calculations/SKIRTOR/models_old
+Calculations/SKIRTOR/models_tau_0.1
+Calculations/SKIRTOR/models_tau_0.1.old
 analysis_v4/check_convolutions_plots.ipynb
 
 #Ignore specific work directories.
