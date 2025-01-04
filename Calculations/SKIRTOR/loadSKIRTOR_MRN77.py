@@ -10,7 +10,7 @@ from synphot.exceptions import SynphotError
 
 class LoadSKIRTOR_MRN77(object):
 
-    def __init__(self, folder=None, interp_method='linear'):
+    def __init__(self, folder=None, interp_method='linear', cone_type="Full"):
 
         #Set the folder to use. 
         if folder is None:
@@ -19,7 +19,18 @@ class LoadSKIRTOR_MRN77(object):
             self.folder = folder
 
         #Make a list of all the MRN77 models. 
-        ls_output = subprocess.run("ls {}/bHDPol_mrn77_tor_oa*".format(self.folder), shell=True, capture_output=True)
+        self.cone_type = cone_type
+        self.base_fname = "bHDPol_mrn77_"
+        if self.cone_type=="Full":
+            pass
+        elif self.cone_type=="Top":
+            self.base_fname += "TopConeOnly_"
+        elif self.cone_type=="Bottom":
+            self.base_fname += "BottomConeOnly_"
+        else:
+            print("Unrecognized type of cone ", self.cone_type)
+            return
+        ls_output = subprocess.run("ls {}/{}tor_oa*".format(self.folder, self.base_fname), shell=True, capture_output=True)
         fnames = ls_output.stdout.decode('utf8').split()
 
         #Make a list of the wavelengths. 
@@ -33,8 +44,7 @@ class LoadSKIRTOR_MRN77(object):
         self.grid_points = list()
         self.grid_ps = list()
         for fname in fnames:
-            m = re.search("bHDPol_mrn77_tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat", fname)
-            #m = re.search("bHDPol_mrn77_tor_oa(.*)_con_oa(.*)-tauV1_i(.*)_sed.dat", fname)
+            m = re.search("{}tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat".format(self.base_fname), fname)
             tang = float(m.group(1))*u.deg
             cang = float(m.group(2))*u.deg
             iang = float(m.group(3))*u.deg

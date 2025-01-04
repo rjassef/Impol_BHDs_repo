@@ -10,7 +10,7 @@ from synphot.exceptions import SynphotError
 
 class LoadSKIRTOR_MRN77(object):
 
-    def __init__(self, folder=None, interp_method='linear'):
+    def __init__(self, folder=None, interp_method='linear', cone_type="Full"):
 
         #Set the folder to use. 
         if folder is None:
@@ -19,7 +19,18 @@ class LoadSKIRTOR_MRN77(object):
             self.folder = folder
 
         #Make a list of all the MRN77 models. 
-        ls_output = subprocess.run("ls {}/bHDPol_mrn77_tor_oa*".format(self.folder), shell=True, capture_output=True)
+        self.cone_type = cone_type
+        self.base_fname = "bHDPol_mrn77_"
+        if self.cone_type=="Full":
+            pass
+        elif self.cone_type=="Top":
+            self.base_fname += "TopConeOnly_"
+        elif self.cone_type=="Bottom":
+            self.base_fname += "BottomConeOnly_"
+        else:
+            print("Unrecognized type of cone ", self.cone_type)
+            return
+        ls_output = subprocess.run("ls {}/{}tor_oa*".format(self.folder, self.base_fname), shell=True, capture_output=True)
         fnames = ls_output.stdout.decode('utf8').split()
 
         #Make a list of the wavelengths. 
@@ -34,7 +45,7 @@ class LoadSKIRTOR_MRN77(object):
         cangle = list()
         iangle = list()
         for fname in fnames:
-            m = re.search("bHDPol_mrn77_tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat", fname)
+            m = re.search("{}tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat".format(self.base_fname), fname)
             if m.group(3)[1]!="1":
                 tangle.append(float(m.group(1)))
                 cangle.append(float(m.group(2)))
@@ -49,7 +60,7 @@ class LoadSKIRTOR_MRN77(object):
             for j,cang in enumerate(self.cang_grid):
 
                 #Read in all the files available for these Tang and Cang.
-                ls_output =  subprocess.run("ls {}/bHDPol_mrn77_tor_oa{:.1f}_con_oa{:.1f}-tauV0.1_i*_sed.dat".format(self.folder, tang.value, cang.value), shell=True, capture_output=True)
+                ls_output =  subprocess.run("ls {}/{}tor_oa{:.1f}_con_oa{:.1f}-tauV0.1_i*_sed.dat".format(self.folder, self.base_fname, tang.value, cang.value), shell=True, capture_output=True)
                 fnames_aux = ls_output.stdout.decode('utf8').split()
                 if len(fnames_aux)==0:
                     continue
@@ -57,7 +68,7 @@ class LoadSKIRTOR_MRN77(object):
                 iang_aux = np.zeros(len(fnames_aux))*u.deg
                 p_aux = np.zeros((len(fnames_aux), len(self.lam_grid)))
                 for k, fname_aux in enumerate(fnames_aux):
-                    m = re.search("bHDPol_mrn77_tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat", fname_aux)
+                    m = re.search("{}tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat".format(self.base_fname), fname_aux)
                     iang_aux[k] = float(m.group(3)) * u.deg
                     data = np.loadtxt(fname_aux)
                     #lam_aux = (data[:,0]*u.micron).to(u.AA)
