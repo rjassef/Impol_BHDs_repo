@@ -10,7 +10,7 @@ from synphot.exceptions import SynphotError
 
 class LoadSKIRTOR_MRN77(object):
 
-    def __init__(self, folder=None, interp_method='linear', cone_type="Full"):
+    def __init__(self, folder=None, interp_method='linear', cone_type="Full", get_scatt_frac=False):
 
         #Set the folder to use. 
         if folder is None:
@@ -56,6 +56,8 @@ class LoadSKIRTOR_MRN77(object):
 
         #Now, we are going to have to combine interpolation methods. Basically, we will use a 1D to interpolate between inclinations (which are mapped not-regularly) and fill in our regular grid.
         self.p_grid = np.zeros((len(self.tang_grid), len(self.cang_grid), len(self.iang_grid), len(self.lam_grid))) 
+        if get_scatt_frac:
+            self.scatt_frac_grid = np.zeros(self.p_grid.shape)
         for i,tang in enumerate(self.tang_grid):
             for j,cang in enumerate(self.cang_grid):
 
@@ -67,12 +69,16 @@ class LoadSKIRTOR_MRN77(object):
 
                 iang_aux = np.zeros(len(fnames_aux))*u.deg
                 p_aux = np.zeros((len(fnames_aux), len(self.lam_grid)))
+                if get_scatt_frac:
+                    scatt_frac_aux = np.zeros(p_aux.shape)
                 for k, fname_aux in enumerate(fnames_aux):
                     m = re.search("{}tor_oa(.*)_con_oa(.*)-tauV0.1_i(.*)_sed.dat".format(self.base_fname), fname_aux)
                     iang_aux[k] = float(m.group(3)) * u.deg
                     data = np.loadtxt(fname_aux)
                     #lam_aux = (data[:,0]*u.micron).to(u.AA)
                     p_aux[k] = (data[:,8]**2+data[:,9]**2)**0.5/data[:,1]
+                    if get_scatt_frac:
+                        scatt_frac_aux[k] = data[:,1]/data[:,2]
 
                 # #For each wavelength, we will make an interp1d object. 
                 # p_interp1d = list()
@@ -83,9 +89,15 @@ class LoadSKIRTOR_MRN77(object):
                 for l, lam in enumerate(self.lam_grid):
                     p_interp1d = interp1d(iang_aux.value, p_aux[:,l], bounds_error=False, fill_value=0.)
                     self.p_grid[i,j,:,l] = p_interp1d(self.iang_grid.value)
+                    if get_scatt_frac:
+                        scatt_frac_interp1d = interp1d(iang_aux.value, scatt_frac_aux[:,l], bounds_error=False, fill_value=0.)
+                        self.scatt_frac_grid[i,j,:,l] = scatt_frac_interp1d(self.iang_grid.value)
                     
         #Now, make the interpolator.
         self.p = RegularGridInterpolator((self.tang_grid.value, self.cang_grid.value, self.iang_grid.value, self.lam_grid.value), self.p_grid, bounds_error=False, fill_value=0.0, method=interp_method)
+
+        if get_scatt_frac:
+            self.scatt_frac = RegularGridInterpolator((self.tang_grid.value, self.cang_grid.value, self.iang_grid.value, self.lam_grid.value), self.scatt_frac_grid, bounds_error=False, fill_value=0.0, method=interp_method)
 
         return
 
@@ -126,4 +138,11 @@ class LoadSKIRTOR_MRN77(object):
                         pass
         
         return p_bb_output
+
+    def mean_scatt_frac(self, tangs, cangs, iangs):
+       
+        vt, vc, vi, vl = np.meshgrid(tangs.value, cangs.value, iangs.value, self.lam_grid.value, indexing='ij')
+        scatt_frac_output = np.mean(self.scatt_frac((vt, vc, vi, vl)), axis=3)
+        
+        return scatt_frac_output
 
