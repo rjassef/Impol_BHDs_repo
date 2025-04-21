@@ -1,0 +1,19 @@
+real_wise_band_1               W1
+real_wise_band_2               W2
+real_wise_band_3               W3
+real_wise_band_4               W4
+vistaY                         Y^{\rm VISTA}
+vistaJ                         J^{\rm VISTA}
+vistaH                         H^{\rm VISTA}
+vistaKs                        K_{s}^{\rm VISTA}
+sdssr                          r
+jband                          
+hband                          
+kband                          
+IRAC_ch1_total_response        
+IRAC_ch2_total_response        
+sdssu                          
+sdssg                          
+sdssr                          
+sdssi                          
+sdssz                          
