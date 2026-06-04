@@ -40,6 +40,7 @@ class PolWaveGas(object):
         theta_grid = np.unique(np.loadtxt(fname, usecols=[0]))*u.deg
         psi_aux = np.unique(np.loadtxt(fname, usecols=[1]))*u.deg
         data_grid = np.loadtxt(fname, usecols=[2,3])
+        data_grid[np.isnan(data_grid)] = 0.
         p_aux = -data_grid[:,1]/data_grid[:,0]
         p_aux = p_aux.reshape([len(theta_grid),len(psi_aux)])
         s1_aux = data_grid[:,0]
