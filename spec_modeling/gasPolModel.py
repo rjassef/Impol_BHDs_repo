@@ -20,35 +20,14 @@ from polWaveGas import PolWaveGas
 # Module to only carry out gas polarization modeling of W0116-0505. By focusing on gas only, we can enable a fast MCMC approach. 
 #########
 
-#Define the scattering object
-# class Gas_Gas(object):
-
-#     def __init__(self):
-
-#         #Set the number of parameters for the continuum (a) and the lines (b). The order in x is always: delta_chi, a model parameters, b model parameters (if any).
-#         self.npar_a = 2
-
-#         #Load the simple gas model. 
-#         self.gas_obj = PolWaveGas()
-
-#         return
-
-#     #In this model, the continuum and emission line polarization fraction is forced to be the same. 
-#     def pfrac(self, x):
-#         a_pars = x[1:self.npar_a+1]
-#         theta = a_pars[0]
-#         psi = a_pars[1]
-#         return self.gas_obj.p(([theta],[psi])).flatten()[0]
-    
-#     #Continuum polarization fraction    
-#     def pfrac_A(self, x):
-#         return self.pfrac(x)
-
-#     #Line polarization fraction    
-#     def pfrac_B(self, x):
-#         return self.pfrac(x)
-
-
+# def ln_prob(x, pol_model, scat_obj, min_vals, max_vals, ifix):
+#     #x_use = np.where(min_vals==max_vals, min_vals, x)
+#     #if np.any(x_use < min_vals) or np.any(x_use > max_vals):
+#     if np.any(x < min_vals[~ifix]) or np.any(x>max_vals[~ifix]):
+#         return -np.inf
+#     x_use = np.copy(min_vals)
+#     x_use[~ifix] = np.copy(x)
+#     return -0.5 * pol_model.chi2(x_use, scat_obj)
 
 class PolModel(object):
 
@@ -66,9 +45,6 @@ class PolModel(object):
         #Save the spec and the spec model loaded for the pol model. 
         self.spec = spec
         self.spec_model = spec_model
-
-        #Set the scattering object. 
-        #self.scat_obj = Gas_Gas()
 
         #All the synphot objects need to be precomputed. 
         self.I_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec_model.flam_model(self.spec.lam_rest), keep_neg=True)
@@ -126,51 +102,10 @@ class PolModel(object):
 
         return 
 
-
-    def get_a_b(self, pfrac_A, pfrac_B):
-
-        #Load the spectrum into a synphot model.
-        # full_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec.flam, keep_neg=True)
-
-        #Use the best-fit model to load the spectrum for the I stoke parameters. 
-        #I_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec_model.flam_model(self.spec.lam_rest), keep_neg=True)
-
-        #The A spec corresponds to the continuum contribution to the stokes parameters. 
-        #A_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=self.spec_model.flam_cont_model(self.spec.lam_rest) * pfrac_A, keep_neg=True)
-
-        #The B spec corresponds to the contribution of the lines with polarization to the Stokes parameters.
-        # flam_pol_lines_model = np.zeros(len(self.spec.lam_rest)) * self.spec_model.flam_model(self.spec.lam_rest).unit
-        # for i in range(len(self.spec_model.multi_line)):
-        #     if self.spec_model.multi_line[i].pol:
-        #         flam_pol_lines_model += self.spec_model.multi_line[i].flam_line_model(self.spec.lam_rest)
-        # B_spec = SourceSpectrum(Empirical1D, points=self.spec.lam_obs, lookup_table=flam_pol_lines_model * pfrac_B, keep_neg=True)
-
-        #Now, precompute the BB parameters. 
-        # a = np.zeros(len(self.bands))
-        # b = np.zeros(len(self.bands))
-        # for j, band in enumerate(self.bands):
-        #     binset_cond = self.spec.lam_obs.to(u.AA).value<band._model.points[0].max()
-        #     binset_cond = binset_cond & (self.spec.lam_obs.to(u.AA).value>band._model.points[0].min())
-        #     binset=self.spec.lam_obs[binset_cond]
-        #     #obs_I = Observation(full_spec, band, binset=binset)
-        #     obs_I = Observation(I_spec, band, binset=binset)
-        #     obs_A = Observation(A_spec, band, binset=binset)
-        #     obs_B = Observation(B_spec, band, binset=binset)
-
-        #     I_BB = obs_I.effstim(flux_unit='flam').value
-        #     a[j] = obs_A.effstim(flux_unit='flam').value/I_BB
-        #     b[j] = obs_B.effstim(flux_unit='flam').value/I_BB
-
-        a = self.A_BB * pfrac_A
-        b = self.B_BB * pfrac_B
-
-        return a, b
-
     #Function to return the broad-band p calculated from the model.
     def model_p(self, x, scat_obj):
         pfrac_A = scat_obj.pfrac_A(x)
         pfrac_B = scat_obj.pfrac_B(x)
-        #a, b = self.get_a_b(pfrac_A, pfrac_B)
         a = self.A_BB * pfrac_A
         b = self.B_BB * pfrac_B
         return (a**2 + b**2 + 2*a*b*np.cos(2*x[0]*u.deg))**0.5
@@ -187,10 +122,11 @@ class PolModel(object):
         p_mod = self.model_p(x, scat_obj)
         return np.sum(((self.p_measured-p_mod)/self.p_unc)**2)
     
-    def ln_prob(self, x, scat_obj, min_vals, max_vals):
-        x_use = np.where(min_vals==max_vals, min_vals, x)
-        if np.any(x_use < min_vals) or np.any(x_use > max_vals):
+    def ln_prob(self, x, scat_obj, min_vals, max_vals, ifix):
+        if np.any(x < min_vals[~ifix]) or np.any(x>max_vals[~ifix]):
             return -np.inf
+        x_use = np.copy(min_vals)
+        x_use[~ifix] = np.copy(x)
         return -0.5 * self.chi2(x_use, scat_obj)
 
     #Function to find the best-fit to the polarization.
@@ -220,9 +156,12 @@ class PolModel(object):
     #Function to find the best-fit to the polarization.
     def fit_pol_MCMC(self, scat_obj, x0, min_vals, max_vals, nwalkers=250, nrep=5000, nburn=500, nthread=None):
 
+        ifix = np.zeros(len(x0), dtype=bool)
+        ifix[min_vals==max_vals] = True
+
         #Set the starting point. 
-        ndim = len(x0)
-        p0 = x0 + 1e-3 * np.random.randn(nwalkers, ndim)
+        ndim = len(x0[~ifix])
+        p0 = x0[~ifix] + 1e-4 * np.random.randn(nwalkers, ndim)
 
         #Force fork mode for multiprocessing
         mp.set_start_method('fork', force=True)
@@ -233,7 +172,7 @@ class PolModel(object):
         with mp.Pool(processes=nthread) as pool:
 
             #Set the sampler
-            self.sampler = emcee.EnsembleSampler(nwalkers, ndim, self.ln_prob, args=(scat_obj, min_vals, max_vals), pool=pool)
+            self.sampler = emcee.EnsembleSampler(nwalkers, ndim, self.ln_prob, args=(scat_obj, min_vals, max_vals, ifix), pool=pool)
 
             #Run the burn-in steps
             state = self.sampler.run_mcmc(p0, nburn, progress=True)
@@ -241,5 +180,11 @@ class PolModel(object):
 
             #Now, run the production step
             self.sampler.run_mcmc(state, nrep, progress=True)
+
+        #Once done, get the flat chain. Here we need to reinsert the fixed values. 
+        self.flat_chain = self.sampler.get_chain(flat=True)
+        self.flat_samples = np.zeros((self.flat_chain.shape[0], len(x0)))
+        self.flat_samples[:,~ifix] = self.flat_chain
+        self.flat_samples[:,ifix] = min_vals[ifix] 
 
         return
