@@ -1,0 +1,3 @@
+53.5 -3.5 +7.9 Torus Opening Angle
+48.6 -2.6 +4.3 Cone Opening Angle
+78.3 -6.3 +13.9 Inclination W0116-0505
