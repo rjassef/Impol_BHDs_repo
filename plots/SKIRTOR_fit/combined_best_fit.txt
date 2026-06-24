@@ -1,7 +1,7 @@
-49.7 -2.3 +3.8 Torus Opening Angle
-46.5 -1.0 +0.6 Cone Opening Angle
-54.7 -1.9 +3.0 Inclination W0019-1046
-81.8 -3.3 +3.8 Inclination W0204-0506
-85.5 -4.6 +3.2 Inclination W0220+0137
-63.0 -3.3 +1.8 Inclination W0831+0140
+53.5 -3.5 +4.4 Torus Opening Angle
+48.6 -2.5 +1.8 Cone Opening Angle
+78.3 -6.3 +7.5 Inclination W0019-1046
+81.8 -3.2 +4.0 Inclination W0204-0506
+85.5 -4.4 +3.2 Inclination W0220+0137
+62.9 -4.1 +1.8 Inclination W0831+0140
 72.7 -1.9 +1.3 Inclination W0116-0505
