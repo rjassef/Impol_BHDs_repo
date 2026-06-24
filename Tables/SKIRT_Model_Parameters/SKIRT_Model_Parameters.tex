@@ -1,0 +1,19 @@
+\begin{table*}
+    \renewcommand{\arraystretch}{1.5}
+    \caption{\label{tab:SKIRT_params} SKIRT Simulation Parameters}
+    \small
+    \begin{tabular}{lcp{0.7\textwidth}}
+        \hline \hline
+        \multicolumn{3}{l}{{\textbf{\textit{Grids for the Geometric Parameters}}}}\\
+        Broad test of mixtures &:& $\psi_{\rm Cone} = 30~\rm deg$, $\psi_{\rm Torus} = 50~\rm deg$ and $\eta = 55-85~\rm deg$ in steps of 10~deg.\\
+        Refined $\rm MRN77_{\rm gra}$ grid &:&  $\psi_{\rm Torus} = 25~\rm deg - 60~\rm deg$, $\psi_{\rm Cone} = 20~\rm deg - \psi_{\rm Torus}$ and $\eta = \psi_{\rm Torus} - 90~\rm deg$, all in steps of 5~deg.\\[5pt]
+
+        \multicolumn{3}{l}{{\textbf{\textit{Dust Mixtures}}}}\\
+        $\rm MRN77_{\rm gra+sil}$ &:&  Size distribution $\propto a^{-3.5}$, $a = 0.005 - 0.25~\mu\rm m$. Silicate to graphite ratio: 51/49.\\
+        $\rm MRN77_{\rm gra}$ &:&  Same as $\rm MRN77_{\rm gra+sil}$ but only with graphites.\\
+        Large grains$_{\rm gra+sil}$ &:& Same as $\rm MRN77_{\rm gra+sil}$ but with $a = 0.1 - 1.0~\mu\rm m$ and $a = 1.0 - 10.0~\mu\rm m$.\\
+        Draine (2003) Mixtures &:& These are the dust and gas mixture models from \citet{draine03} for the SMC bar, the LMC average and the MW.\\
+        Gaskell et al. (2004) $_{\rm gra+sil}$ &:& Dust mixture with the grain size distribution from \citet{gaskell04} and the same silicates to graphites ratio of $\rm MRN77_{\rm gra+sil}$.\\
+        \hline
+    \end{tabular}
+\end{table*}
