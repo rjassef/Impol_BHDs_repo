@@ -18,6 +18,10 @@ Calculations/SKIRTOR/models_tau_0.1.old
 analysis_v4/check_convolutions_plots.ipynb
 Calculations/SKIRTOR/models.bak_blazar
 
+#Ignore MCMC flatchains.
+combined_flatchain.txt
+W0116_flatchain.txt
+
 #Ignore specific work directories.
 /analysis_v3/work/
 
